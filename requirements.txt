@@ -1,4 +1,5 @@
 asyncio
 discord.py
+discord.py[voice]
 youtube_dl
 neispy
