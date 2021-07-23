@@ -1,8 +1,13 @@
 asyncio
 discord.py
-discord.py[voice]~=1.4.0
 PyNaCl
-colorlog
 youtube_dl
 neispy
 ffmpeg
+discord.py[voice]==1.7.3
+websockets
+pip
+colorlog
+cffi --only-binary all; 
+chardet
+opuslib
