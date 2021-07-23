@@ -4,6 +4,8 @@ import discord
 import youtube_dl
 import neispy
 import datetime
+import ctypes
+import ctypes.util
 from discord.ext import commands
 
 #쓰읍.
