@@ -1,6 +1,8 @@
 asyncio
 discord.py
-discord.py[voice]
+discord.py[voice]~=1.4.0
+PyNaCl
+colorlog
 youtube_dl
 neispy
 ffmpeg
