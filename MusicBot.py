@@ -6,7 +6,7 @@ import neispy
 import datetime
 from discord.ext import commands
 
-#쓰읍...
+#쓰읍..
 name="울산애니원고등학교"
 
 neis = neispy.Client('***REMOVED***')
