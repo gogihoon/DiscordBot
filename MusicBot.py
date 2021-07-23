@@ -73,7 +73,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def 도움말(self, ctx):
-        await ctx.send("들어와,나가,노래")
+        await ctx.send("들어와\n나가\n노래 [노래제목]\n아침\n점심\n저녘\n")
 
     @commands.command()
     async def 영어(self, ctx, *, text1):
@@ -82,10 +82,13 @@ class Music(commands.Cog):
 
     
     @commands.command()
-    async def 들어와(self, ctx, *, channel:discord.VoiceChannel):
-        if ctx.voice_client is not None:
-            return await ctx.voice_client.move_to(channel)
-        await channel.connect()
+    async def 들어와(self, ctx):
+        if ctx.voice_client is None:
+            if ctx.author.voice:
+                await ctx.author.voice.channel.connect()
+            else:
+                await ctx.send("당신은 음성 채널에 연결되있지 않습니다.")
+                raise commands.CommandError("사용자가 음성 채널에 없음.")
 
     @commands.command()
     async def 노래(self, ctx, *, url):
@@ -93,7 +96,7 @@ class Music(commands.Cog):
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
             ctx.voice_client.play(player, after=lambda e: print(f'에러 : {e}') if e else None)
 
-        await ctx.send(f':play_pause:지금 플레이 중인 노래 : {player.title}')
+        await ctx.send(f' :play_pause: 지금 플레이 중인 노래 : {player.title}')
 
     @commands.command()
     async def 볼륨(self, ctx, volume: int):
@@ -106,6 +109,10 @@ class Music(commands.Cog):
     async def 나가(self, ctx):
         await ctx.voice_client.disconnect()
 
+    @commands.command()
+    async def 멈춰(self, ctx):
+        ctx.voice_client.stop()
+
     @노래.before_invoke
     async def ensure_voice(self, ctx):#노래 자동으로 와서 틀기
         if ctx.voice_client is None:
@@ -116,12 +123,15 @@ class Music(commands.Cog):
                 raise commands.CommandError("사용자가 음성 채널에 없음.")
         elif ctx.voice_client.is_playing():
             ctx.voice_client.stop()
+            
     @commands.command()
     async def 아침(self, ctx):
         await ctx.send(meal1);
+        
     @commands.command()
     async def 점심(self, ctx):
         await ctx.send(meal2);
+        
     @commands.command()
     async def 저녘(self, ctx):
         await ctx.send(meal3);
@@ -136,6 +146,8 @@ async def on_ready():
     print(bot.user.name)
     print(bot.user.id)
     print('------')
+    await bot.change_presence(status=discord.Status.online, activity=discord.Game('!도움말'))
+
 
 @bot.event
 async def on_message_delete(message):
