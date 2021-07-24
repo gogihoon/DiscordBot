@@ -183,11 +183,13 @@ async def on_ready():
 
 @bot.event
 async def on_message_delete(message):
-    print(f"{message.content} 삭제됨")
+    channel = bot.get_channel(***REMOVED***)
+    await channel.send(f"{message.content} 삭제됨")
 
 @bot.event
 async def on_message_edit(before, after):
-    print(f"{before.content} 에서 {after.content} 로 편집됨.")
+    channel = bot.get_channel(***REMOVED***)
+    await channel.send(f"{before.content} 에서 {after.content} 로 편집됨.")
 
 bot.add_cog(Music(bot))
 bot.run('***REMOVED******REMOVED***')
