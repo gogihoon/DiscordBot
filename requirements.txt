@@ -11,3 +11,5 @@ colorlog
 cffi --only-binary all; 
 chardet
 opuslib
+requests
+json

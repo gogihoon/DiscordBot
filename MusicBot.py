@@ -6,12 +6,13 @@ import neispy
 import datetime
 import ctypes
 import ctypes.util
+import json
+import requests
 from discord.ext import commands
 
-#쓰읍.
-name="울산애니원고등학교"
-
-neis = neispy.Client('***REMOVED***')
+name="울산애니원고등학교"#급식 학교 이름
+api_key = "***REMOVED******REMOVED***"#라이엇 api 키
+neis = neispy.Client('***REMOVED***')#네이스 api 키
 
 meal1='방학입니다'
 meal2='방학입니다'
@@ -26,6 +27,8 @@ if schedule != '여름방학' and schedule != '겨울방학':
     meal1 = scmeal[0].DDISH_NM.replace("<br/>", "\n")
     meal2 = scmeal[1].DDISH_NM.replace("<br/>", "\n")
     meal3 = scmeal[2].DDISH_NM.replace("<br/>", "\n")
+
+
 
 youtube_dl.utils.bug_report_message=lambda: ''
 
@@ -138,6 +141,33 @@ class Music(commands.Cog):
     async def 저녘(self, ctx):
         await ctx.send(meal3);
 
+    @commands.command()
+    async def 롤전적(self, ctx, *, name):
+        URL = "https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/"+name
+        res = requests.get(URL, headers={"X-Riot-Token": api_key})
+        if res.status_code == 200:
+            #코드가 200일때
+            resobj = json.loads(res.text)
+            URL = "https://kr.api.riotgames.com/lol/league/v4/entries/by-summoner/"+resobj["id"]
+            res = requests.get(URL, headers={"X-Riot-Token": api_key})
+            rankinfo = json.loads(res.text)
+            await ctx.send("소환사 이름: "+name)
+            for i in rankinfo:
+                if i["queueType"] == "RANKED_SOLO_5x5":
+                    #솔랭과 자랭중 솔랭
+                    await ctx.send("솔로랭크")
+                    await ctx.send(f'티어: {i["tier"]} {i["rank"]}')
+                    await ctx.send(f'승: {i["wins"]}판, 패: {i["losses"]}판')
+                    await ctx.send(f'승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%')
+                else:
+                    # 솔랭과 자랭중 자랭
+                    await ctx.send("자유랭크")
+                    await ctx.send(f'티어: {i["tier"]} {i["rank"]}')
+                    await ctx.send(f'승: {i["wins"]}판, 패: {i["losses"]}판')
+                    await ctx.send(f'승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%')
+        else:
+            # 코드가 200이 아닐때(즉 찾는 닉네임이 없을때)
+            await ctx.send("소환사가 존재하지 않습니다")
 
 
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"),
