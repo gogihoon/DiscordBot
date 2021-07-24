@@ -78,12 +78,15 @@ class Music(commands.Cog):
 
     @commands.command()
     async def 도움말(self, ctx):
-        await ctx.send(">>> 들어와\n나가\n노래 [노래제목]\n아침\n점심\n저녘\n")
+        embed=discord.Embed(description="들어와\n나가\n노래 [노래제목]\n볼륨 [0~100]\n멈춰\n아침\n점심\n저녘\n롤전적 [닉넴]",color=0x7AA600)
+        embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
+        embed.set_author(name="명령어 입니다")
+        
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def 영어(self, ctx, *, text1):
         await ctx.send(":regional_indicator_"+text1+":")
-
 
     
     @commands.command()
@@ -92,23 +95,23 @@ class Music(commands.Cog):
             if ctx.author.voice:
                 await ctx.author.voice.channel.connect()
             else:
-                await ctx.send(">>> 당신은 음성 채널에 연결되있지 않습니다.")
-                raise commands.CommandError(">>> 사용자가 음성 채널에 없음.")
+                await ctx.send(embed=discord.Embed(description="당신은 음성 채널에 연결되있지 않습니다.",color=0x7AA600))
+                raise commands.CommandError("사용자가 음성 채널에 없음.")
 
     @commands.command()
     async def 노래(self, ctx, *, url):
         async with ctx.typing():
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-            ctx.voice_client.play(player, after=lambda e: print(f'>>> 에러 : {e}') if e else None)
+            ctx.voice_client.play(player, after=lambda e: print(f'에러 : {e}') if e else None)
 
-        await ctx.send(f'>>>  :play_pause: 지금 플레이 중인 노래 : {player.title}')
+        await ctx.send(embed=discord.Embed(description=f':play_pause: 지금 플레이 중인 노래 : {player.title}',color=0x7AA600))
 
     @commands.command()
     async def 볼륨(self, ctx, volume: int):
         if ctx.voice_client is None:
-            return await ctx.send(">>> 음성 채널에 연결되있지 않습니다.")
+            return await ctx.send(embed=discord.Embed(description="음성 채널에 연결되있지 않습니다.",color=0x7AA600))
         ctx.voice_client.source.volume = volume / 100
-        await ctx.send(f">>> 볼륨을 {volume}%로 바꿨습니다.")
+        await ctx.send(embed=discord.Embed(description=f"볼륨을 {volume}%로 바꿨습니다.",color=0x7AA600))
 
     @commands.command()
     async def 나가(self, ctx):
@@ -124,22 +127,22 @@ class Music(commands.Cog):
             if ctx.author.voice:
                 await ctx.author.voice.channel.connect()
             else:
-                await ctx.send(">>> 당신은 음성 채널에 연결되있지 않습니다.")
-                raise commands.CommandError(">>> 사용자가 음성 채널에 없음.")
+                await ctx.send(embed=discord.Embed(description="당신은 음성 채널에 연결되있지 않습니다.",color=0x7AA600))
+                raise commands.CommandError("사용자가 음성 채널에 없음.")
         elif ctx.voice_client.is_playing():
             ctx.voice_client.stop()
             
     @commands.command()
     async def 아침(self, ctx):
-        await ctx.send('>>> '+meal1);
+        await ctx.send(embed=discord.Embed(description=f"{meal1}",color=0x7AA600))
         
     @commands.command()
     async def 점심(self, ctx):
-        await ctx.send('>>> '+meal2);
+        await ctx.send(embed=discord.Embed(description=f"{meal2}",color=0x7AA600))
         
     @commands.command()
     async def 저녘(self, ctx):
-        await ctx.send('>>> '+meal3);
+        await ctx.send(embed=discord.Embed(description=f"{meal3}",color=0x7AA600))
 
     @commands.command()
     async def 롤전적(self, ctx, *, name):
@@ -151,17 +154,106 @@ class Music(commands.Cog):
             URL = "https://kr.api.riotgames.com/lol/league/v4/entries/by-summoner/"+resobj["id"]
             res = requests.get(URL, headers={"X-Riot-Token": api_key})
             rankinfo = json.loads(res.text)
-            await ctx.send(">>> 소환사 이름: "+name)
+            await ctx.send("소환사 이름: "+name)
             for i in rankinfo:
                 if i["queueType"] == "RANKED_SOLO_5x5":
                     #솔랭과 자랭중 솔랭
-                    await ctx.send(f'>>> 솔로랭크\n티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%')
+                    if i["tier"] == "IRON":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="솔로랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/a9Kpj7y.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "BRONZE":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="솔로랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/umLjHzW.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "SILVER":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="솔로랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/4igsYZO.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "GOLD":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="솔로랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/hCHuKhg.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "PLATINUM":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="솔로랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/r5TcH3l.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "DIAMOND":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="솔로랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/FKYMP3D.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "MASTER":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="솔로랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/dJG4Gbr.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "GRANDMASTER":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="솔로랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/5g5bTD9.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "CHALLENGER":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="솔로랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/qk9H0FE.png")
+                        await ctx.send(embed=embed)
                 else:
                     # 솔랭과 자랭중 자랭
-                    await ctx.send(f'>>> 자유랭크\n티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%')
+                    if i["tier"] == "IRON":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="솔로랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/a9Kpj7y.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "BRONZE":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="솔로랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/umLjHzW.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "SILVER":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="솔로랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/4igsYZO.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "GOLD":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="자유랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/hCHuKhg.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "PLATINUM":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="자유랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/r5TcH3l.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "DIAMOND":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="자유랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/FKYMP3D.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "MASTER":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="자유랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/dJG4Gbr.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "GRANDMASTER":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="자유랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/5g5bTD9.png")
+                        await ctx.send(embed=embed)
+                    if i["tier"] == "CHALLENGER":
+                        embed=discord.Embed(description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
+                        embed.set_author(name="자유랭크")
+                        embed.set_thumbnail(url="https://i.imgur.com/qk9H0FE.png")
+                        await ctx.send(embed=embed)
         else:
             # 코드가 200이 아닐때(즉 찾는 닉네임이 없을때)
-            await ctx.send(">>> 소환사가 존재하지 않습니다")
+            embed=discord.Embed(title="소환사가 존재하지 않습니다",color=0x7AA600)
+            await ctx.send(embed=embed)
 
 
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"),
@@ -178,12 +270,12 @@ async def on_ready():
 @bot.event
 async def on_message_delete(message):
     channel = bot.get_channel(***REMOVED***)
-    await channel.send(f">>> {message.content} 삭제됨")
+    await channel.send(f"{message.author} : {message.content} 삭제됨")
 
 @bot.event
 async def on_message_edit(before, after):
     channel = bot.get_channel(***REMOVED***)
-    await channel.send(f">>> {before.content} 에서 {after.content} 로 편집됨.")
+    await channel.send(f"{before.author} : {before.content} 에서 {after.author} : {after.content} 로 편집됨.")
 
 bot.add_cog(Music(bot))
 bot.run('***REMOVED******REMOVED***')
