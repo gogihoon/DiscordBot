@@ -14,4 +14,3 @@ opuslib
 requests
 beautifulsoup4
 html5lib
-selenium
