@@ -15,7 +15,7 @@ import re
 from discord.ext import commands
 
 name="울산애니원고등학교"#급식 학교 이름
-api_key = "***REMOVED******REMOVED***"#라이엇 api 키
+api_key = "***REMOVED***"#라이엇 api 키
 neis = neispy.Client('***REMOVED***')#네이스 api 키
 meal1='방학입니다'
 meal2='방학입니다'
@@ -81,7 +81,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def 도움말(self, ctx):
-        embed=discord.Embed(title="명령어 앞에는 느낌표!",description="들어와\n나가\n노래 [노래제목]\n볼륨 [0~100]\n멈춰\n아침\n점심\n저녘\n롤전적 [닉넴]\n온도 [지역]\n스팀 [게임이름]",color=0x7AA600)
+        embed=discord.Embed(title="명령어 앞에는 느낌표!",description="들어와\n나가\n노래 [노래제목]\n볼륨 [0~100]\n멈춰\n아침\n점심\n저녘\n롤전적 [닉넴]\n모스트 [닉넴]\n온도 [지역]\n스팀 [게임이름]",color=0x7AA600)
         embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
         await ctx.send(embed=embed)
 
@@ -216,10 +216,14 @@ class Music(commands.Cog):
             if res.status_code == 200:
                 #코드가 200일때
                 resobj = json.loads(res.text)
+                embed = discord.Embed(title=f'랭크 전적!', description=f'{name}님의 전적을\n불러오고 있어요!', color=0x7AA600)
+                icon=f'{resobj["profileIconId"]}'
+                embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/11.15.1/img/profileicon/"+icon+'.png')
+                await ctx.send(embed=embed)
                 URL = "https://kr.api.riotgames.com/lol/league/v4/entries/by-summoner/"+resobj["id"]
                 res = requests.get(URL, headers={"X-Riot-Token": api_key})
                 rankinfo = json.loads(res.text)
-                await ctx.send("소환사 이름: "+name)
+
                 for i in rankinfo:
                     if i["queueType"] == "RANKED_SOLO_5x5":
                         #솔랭과 자랭중 솔랭
@@ -306,6 +310,43 @@ class Music(commands.Cog):
             embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
             await ctx.send(embed=embed)
 
+    @commands.command()
+    async def 모스트(self, ctx, *, name = None):
+        if name is not None:
+            URL = "https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + name
+            res = requests.get(URL, headers={"X-Riot-Token": api_key})
+            if res.status_code == 200:
+                resobj = json.loads(res.text)
+                URL = "https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/" + resobj["id"]
+                res = requests.get(URL, headers={"X-Riot-Token": api_key})
+                mostInfo=json.loads(res.text)
+                j=0
+                for i in mostInfo:
+                    req = requests.get("http://ddragon.leagueoflegends.com/cdn/11.15.1/data/ko_KR/champion.json")
+                    loadJson = req.json()
+                    data = loadJson['data']
+                    d = {v['key']: h for h, v in data.items()}
+                    mostName = data[d[f'{i["championId"]}']]['name']
+                    mostLevel = i["championLevel"]
+                    mostPoints = i["championPoints"]
+                    img = data[d[f'{i["championId"]}']]['image']['full']
+                    embed = discord.Embed(title=f'모스트{j+1}은(는) {mostName}에요!', description=f'{mostLevel}레벨\n{mostPoints} 포인트', color=0x7AA600)
+                    embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/11.15.1/img/champion/"+img)
+                    await ctx.send(embed=embed)
+                    j += 1
+                    if j >= 3:
+                        break
+            else:
+                embed = discord.Embed(title="소환사가 존재하지 않아요!", description="ㅠㅠ", color=0x7AA600)
+                embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+                await ctx.send(embed=embed)
+        else:
+            embed = discord.Embed(title="소환사 닉네임을 입력해주세요!", description="ex) !모스트 고기냠냠먹음", color=0x7AA600)
+            embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+            await ctx.send(embed=embed)
+
+
+
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"),description='musicBot')
 
 @bot.event
@@ -326,12 +367,12 @@ async def on_message_edit(before, after):
     channel = bot.get_channel(***REMOVED***)
     await channel.send(f"{before.author} : {before.content} 에서 {after.author} : {after.content} 로 편집됨.")
 
-@bot.event
-async def on_command_error(ctx, error):
-    embed=discord.Embed(description=f'명령어가 없거나 걍 오류에요!\n"!도움말"로 명령어를 알아보세요!',color=0x7AA600)
-    embed.set_author(name="Error!!")
-    embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
-    await ctx.send(embed=embed)
+#@bot.event
+#async def on_command_error(ctx, error):
+#    embed=discord.Embed(description=f'명령어가 없거나 걍 오류에요!\n"!도움말"로 명령어를 알아보세요!',color=0x7AA600)
+#    embed.set_author(name="Error!!")
+#    embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+#    await ctx.send(embed=embed)
 
 bot.add_cog(Music(bot))
 bot.run('***REMOVED******REMOVED***')
