@@ -15,7 +15,11 @@ import re
 from discord.ext import commands
 
 name="울산애니원고등학교"#급식 학교 이름
+<<<<<<< HEAD
 api_key = "***REMOVED***"#라이엇 api 키
+=======
+api_key = "***REMOVED******REMOVED***"#라이엇 api 키
+>>>>>>> ***REMOVED***
 neis = neispy.Client('***REMOVED***')#네이스 api 키
 meal1='방학입니다'
 meal2='방학입니다'
@@ -198,7 +202,7 @@ class Music(commands.Cog):
             for i in range(0, len(soup.find_all('span', class_='title'))):
                 embed = discord.Embed()
                 price = soup.find_all('div', class_='col search_price_discount_combined responsive_secondrow')[i].text
-                price1 = re.sub('₩', '', price)
+                price1 = re.sub('$', '', price)
                 if len(price1.split()) == 3:
                     embed = discord.Embed(title = soup.find_all('span', class_='title')[i].text , description = price1.split()[0] + '세일해서 ' + price1.split()[1] + '->' + price1.split()[2]+' 입니다!', color=0x7AA600)
                 else:
