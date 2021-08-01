@@ -15,11 +15,8 @@ import re
 from discord.ext import commands
 
 name="울산애니원고등학교"#급식 학교 이름
-<<<<<<< HEAD
 api_key = "***REMOVED***"#라이엇 api 키
-=======
 api_key = "***REMOVED******REMOVED***"#라이엇 api 키
->>>>>>> ***REMOVED***
 neis = neispy.Client('***REMOVED***')#네이스 api 키
 meal1='방학입니다'
 meal2='방학입니다'
@@ -371,12 +368,12 @@ async def on_message_edit(before, after):
     channel = bot.get_channel(***REMOVED***)
     await channel.send(f"{before.author} : {before.content} 에서 {after.author} : {after.content} 로 편집됨.")
 
-#@bot.event
-#async def on_command_error(ctx, error):
-#    embed=discord.Embed(description=f'명령어가 없거나 걍 오류에요!\n"!도움말"로 명령어를 알아보세요!',color=0x7AA600)
-#    embed.set_author(name="Error!!")
-#    embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
-#    await ctx.send(embed=embed)
+@bot.event
+async def on_command_error(ctx, error):
+    embed=discord.Embed(description=f'명령어가 없거나 걍 오류에요!\n"!도움말"로 명령어를 알아보세요!',color=0x7AA600)
+    embed.set_author(name="Error!!")
+    embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+    await ctx.send(embed=embed)
 
 bot.add_cog(Music(bot))
 bot.run('***REMOVED******REMOVED***')
