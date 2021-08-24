@@ -13,7 +13,7 @@ import urllib
 import bs4
 import re
 from discord.ext import commands
-
+#왜안됨?
 name="울산애니원고등학교"#급식 학교 이름
 api_key = "***REMOVED***"#라이엇 api 키
 neis = neispy.Client('***REMOVED***')#네이스 api 키
