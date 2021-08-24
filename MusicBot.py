@@ -376,4 +376,4 @@ async def on_command_error(ctx, error):
     await ctx.send(embed=embed)
 
 bot.add_cog(Music(bot))
-bot.run('***REMOVED******REMOVED***')
+bot.run('***REMOVED***')
