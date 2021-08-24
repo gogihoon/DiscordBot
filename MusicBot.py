@@ -13,7 +13,8 @@ import urllib
 import bs4
 import re
 from discord.ext import commands
-#왜안됨?
+
+
 name="울산애니원고등학교"#급식 학교 이름
 api_key = "***REMOVED***"#라이엇 api 키
 neis = neispy.Client('***REMOVED***')#네이스 api 키
@@ -216,7 +217,7 @@ class Music(commands.Cog):
             if res.status_code == 200:
                 #코드가 200일때
                 resobj = json.loads(res.text)
-                embed = discord.Embed(title=f'랭크 전적!', description=f'{name}님의 전적을\n불러오고 있어요!', color=0x7AA600)
+                embed = discord.Embed(title=f'랭크 전적!', description=f'{name} 님의 전적을\n불러오고 있어요!', color=0x7AA600)
                 icon=f'{resobj["profileIconId"]}'
                 embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/11.15.1/img/profileicon/"+icon+'.png')
                 await ctx.send(embed=embed)
