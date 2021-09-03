@@ -3,7 +3,7 @@ import asyncio
 import discord
 import youtube_dl
 import neispy
-import datetime
+from datetime import datetime
 import ctypes
 import ctypes.util
 import json
@@ -24,13 +24,10 @@ meal3='방학입니다'
 scinfo = neis.schoolInfo(SCHUL_NM=name)
 AE = scinfo[0].ATPT_OFCDC_SC_CODE  # 교육청코드
 SE = scinfo[0].SD_SCHUL_CODE  # 학교코드
-scschedule =neis.SchoolSchedule(AE, SE)
-schedule = scschedule[0].EVENT_NM  # 학사일정명 가져옴
-if schedule != '여름방학' and schedule != '겨울방학':
-    scmeal = neis.mealServiceDietInfo(AE, SE)
-    meal1 = scmeal[0].DDISH_NM.replace("<br/>", "\n")
-    meal2 = scmeal[1].DDISH_NM.replace("<br/>", "\n")
-    meal3 = scmeal[2].DDISH_NM.replace("<br/>", "\n")
+scmeal = neis.mealServiceDietInfo(AE, SE,MLSV_YMD=datetime.today().strftime("%Y%m%d"))
+meal1 = scmeal[0].DDISH_NM.replace("<br/>", "\n")
+meal2 = scmeal[1].DDISH_NM.replace("<br/>", "\n")
+meal3 = scmeal[2].DDISH_NM.replace("<br/>", "\n")
 
 
 
