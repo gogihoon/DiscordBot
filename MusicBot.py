@@ -18,17 +18,18 @@ from discord.ext import commands
 name="울산애니원고등학교"#급식 학교 이름
 api_key = "***REMOVED***"#라이엇 api 키
 neis = neispy.Client('***REMOVED***')#네이스 api 키
-meal1='방학입니다'
-meal2='방학입니다'
-meal3='방학입니다'
 scinfo = neis.schoolInfo(SCHUL_NM=name)
 AE = scinfo[0].ATPT_OFCDC_SC_CODE  # 교육청코드
 SE = scinfo[0].SD_SCHUL_CODE  # 학교코드
-scmeal = neis.mealServiceDietInfo(AE, SE,MLSV_YMD=datetime.today().strftime("%Y%m%d"))
-meal1 = scmeal[0].DDISH_NM.replace("<br/>", "\n")
-meal2 = scmeal[1].DDISH_NM.replace("<br/>", "\n")
-meal3 = scmeal[2].DDISH_NM.replace("<br/>", "\n")
-
+try:
+    scmeal = neis.mealServiceDietInfo(AE, SE)#MLSV_YMD=datetime.today().strftime("%Y%m%d")
+    meal1 = scmeal[0].DDISH_NM.replace("<br/>", "\n")
+    meal2 = scmeal[1].DDISH_NM.replace("<br/>", "\n")
+    meal3 = scmeal[2].DDISH_NM.replace("<br/>", "\n")
+except Exception as e:
+    meal1 = '급식이 없어요!'
+    meal2 = '급식이 없어요!'
+    meal3 = '급식이 없어요!'
 
 
 youtube_dl.utils.bug_report_message=lambda: ''
