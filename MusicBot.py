@@ -21,6 +21,7 @@ neis = neispy.Client('***REMOVED***')#네이스 api 키
 scinfo = neis.schoolInfo(SCHUL_NM=name)
 AE = scinfo[0].ATPT_OFCDC_SC_CODE  # 교육청코드
 SE = scinfo[0].SD_SCHUL_CODE  # 학교코드
+
 try:
     scmeal = neis.mealServiceDietInfo(AE, SE)#MLSV_YMD=datetime.today().strftime("%Y%m%d")
     meal1 = scmeal[0].DDISH_NM.replace("<br/>", "\n")
@@ -74,7 +75,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
 
-class Music(commands.Cog):
+class Command(commands.Cog):
     def __init__(self,bot):
         self.bot=bot
 
@@ -217,89 +218,81 @@ class Music(commands.Cog):
                 resobj = json.loads(res.text)
                 embed = discord.Embed(title=f'랭크 전적!', description=f'{name} 님의 전적을\n불러오고 있어요!', color=0x7AA600)
                 icon=f'{resobj["profileIconId"]}'
-                embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/11.15.1/img/profileicon/"+icon+'.png')
+                embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/11.24.1/img/profileicon/"+icon+'.png')
                 await ctx.send(embed=embed)
                 URL = "https://kr.api.riotgames.com/lol/league/v4/entries/by-summoner/"+resobj["id"]
                 res = requests.get(URL, headers={"X-Riot-Token": api_key})
                 rankinfo = json.loads(res.text)
 
+                def prntTier(tier,isSolo):
+                    if isSolo == True:
+                        Rank="솔로랭크"
+                    else:
+                        Rank="자유랭크"
+                    embed = discord.Embed(title=Rank,
+                                          description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"] / (i["wins"] + i["losses"]) * 100:.2f}%',
+                                          color=0x7AA600)
+                    if tier == 1:
+                        embed.set_thumbnail(url="https://i.imgur.com/a9Kpj7y.png")
+                    elif tier == 2:
+                        embed.set_thumbnail(url="https://i.imgur.com/umLjHzW.png")
+                    elif tier == 3:
+                        embed.set_thumbnail(url="https://i.imgur.com/4igsYZO.png")
+                    elif tier == 4:
+                        embed.set_thumbnail(url="https://i.imgur.com/hCHuKhg.png")
+                    elif tier == 5:
+                        embed.set_thumbnail(url="https://i.imgur.com/r5TcH3l.png")
+                    elif tier == 6:
+                        embed.set_thumbnail(url="https://i.imgur.com/FKYMP3D.png")
+                    elif tier == 7:
+                        embed.set_thumbnail(url="https://i.imgur.com/dJG4Gbr.png")
+                    elif tier == 8:
+                        embed.set_thumbnail(url="https://i.imgur.com/5g5bTD9.png")
+                    elif tier == 9:
+                        embed.set_thumbnail(url="https://i.imgur.com/qk9H0FE.png")
+                    await ctx.send(embed=embed)
+
                 for i in rankinfo:
                     if i["queueType"] == "RANKED_SOLO_5x5":
                         #솔랭과 자랭중 솔랭
                         if i["tier"] == "IRON":
-                            embed=discord.Embed(title="솔로랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/a9Kpj7y.png")
-                            await ctx.send(embed=embed)
+                            prntTier(1,True)
                         if i["tier"] == "BRONZE":
-                            embed=discord.Embed(title="솔로랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/umLjHzW.png")
-                            await ctx.send(embed=embed)
+                            prntTier(2,True)
                         if i["tier"] == "SILVER":
-                            embed=discord.Embed(title="솔로랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/4igsYZO.png")
-                            await ctx.send(embed=embed)
+                            prntTier(3,True)
                         if i["tier"] == "GOLD":
-                            embed=discord.Embed(title="솔로랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/hCHuKhg.png")
-                            await ctx.send(embed=embed)
+                            prntTier(4,True)
                         if i["tier"] == "PLATINUM":
-                            embed=discord.Embed(title="솔로랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/r5TcH3l.png")
-                            await ctx.send(embed=embed)
+                            prntTier(5,True)
                         if i["tier"] == "DIAMOND":
-                            embed=discord.Embed(title="솔로랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/FKYMP3D.png")
-                            await ctx.send(embed=embed)
+                            prntTier(6,True)
                         if i["tier"] == "MASTER":
-                            embed=discord.Embed(title="솔로랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/dJG4Gbr.png")
-                            await ctx.send(embed=embed)
+                            prntTier(7,True)
                         if i["tier"] == "GRANDMASTER":
-                            embed=discord.Embed(title="솔로랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/5g5bTD9.png")
-                            await ctx.send(embed=embed)
+                            prntTier(8,True)
                         if i["tier"] == "CHALLENGER":
-                            embed=discord.Embed(title="솔로랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/qk9H0FE.png")
-                            await ctx.send(embed=embed)
+                            prntTier(9,True)
                     else:
                         # 솔랭과 자랭중 자랭
                         if i["tier"] == "IRON":
-                            embed=discord.Embed(title="자유랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/a9Kpj7y.png")
-                            await ctx.send(embed=embed)
+                            prntTier(1,False)
                         if i["tier"] == "BRONZE":
-                            embed=discord.Embed(title="자유랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/umLjHzW.png")
-                            await ctx.send(embed=embed)
+                            prntTier(2,False)
                         if i["tier"] == "SILVER":
-                            embed=discord.Embed(title="자유랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/4igsYZO.png")
-                            await ctx.send(embed=embed)
+                            prntTier(3,False)
                         if i["tier"] == "GOLD":
-                            embed = discord.Embed(title="자유랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"] / (i["wins"] + i["losses"]) * 100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/hCHuKhg.png")
-                            await ctx.send(embed=embed)
+                            prntTier(4,False)
                         if i["tier"] == "PLATINUM":
-                            embed=discord.Embed(title="자유랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/r5TcH3l.png")
-                            await ctx.send(embed=embed)
+                            prntTier(5,False)
                         if i["tier"] == "DIAMOND":
-                            embed=discord.Embed(title="자유랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/FKYMP3D.png")
-                            await ctx.send(embed=embed)
+                            prntTier(6,False)
                         if i["tier"] == "MASTER":
-                            embed=discord.Embed(title="자유랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/dJG4Gbr.png")
-                            await ctx.send(embed=embed)
+                            prntTier(7,False)
                         if i["tier"] == "GRANDMASTER":
-                            embed=discord.Embed(title="자유랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/5g5bTD9.png")
-                            await ctx.send(embed=embed)
+                            prntTier(8,False)
                         if i["tier"] == "CHALLENGER":
-                            embed=discord.Embed(title="자유랭크",description=f'티어: {i["tier"]} {i["rank"]}\n승: {i["wins"]}판, 패: {i["losses"]}판\n승률: {i["wins"]/(i["wins"]+i["losses"])*100:.2f}%',color=0x7AA600)
-                            embed.set_thumbnail(url="https://i.imgur.com/qk9H0FE.png")
-                            await ctx.send(embed=embed)
+                            prntTier(9,False)
             else:
                 embed=discord.Embed(title="소환사가 존재하지 않아요!",description="ㅠㅠ",color=0x7AA600)
                 embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
@@ -321,7 +314,7 @@ class Music(commands.Cog):
                 mostInfo=json.loads(res.text)
                 j=0
                 for i in mostInfo:
-                    req = requests.get("http://ddragon.leagueoflegends.com/cdn/11.15.1/data/ko_KR/champion.json")
+                    req = requests.get("http://ddragon.leagueoflegends.com/cdn/11.24.1/data/ko_KR/champion.json")
                     loadJson = req.json()
                     data = loadJson['data']
                     d = {v['key']: h for h, v in data.items()}
@@ -330,7 +323,7 @@ class Music(commands.Cog):
                     mostPoints = i["championPoints"]
                     img = data[d[f'{i["championId"]}']]['image']['full']
                     embed = discord.Embed(title=f'모스트{j+1}은(는) {mostName}에요!', description=f'{mostLevel}레벨\n{mostPoints} 포인트', color=0x7AA600)
-                    embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/11.15.1/img/champion/"+img)
+                    embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/11.24.1/img/champion/"+img)
                     await ctx.send(embed=embed)
                     j += 1
                     if j >= 3:
@@ -373,5 +366,5 @@ async def on_command_error(ctx, error):
     embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
     await ctx.send(embed=embed)
 
-bot.add_cog(Music(bot))
+bot.add_cog(Command(bot))
 bot.run('***REMOVED***')
