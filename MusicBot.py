@@ -1,4 +1,4 @@
-#-*- coding:utf-8 -*- 
+ #-*- coding:utf-8 -*-
 import asyncio
 import discord
 import youtube_dl
@@ -93,7 +93,7 @@ class Command(commands.Cog):
                                         "저녘\n"
                                         "롤전적 [닉넴]\n"
                                         "모스트 [닉넴]\n"
-                                        "온도 [지역]\n"
+                                        "날씨 [지역]\n"
                                         "스팀 [게임이름]",
                             color=0x7AA600)
         embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
@@ -206,15 +206,16 @@ class Command(commands.Cog):
             await ctx.send(embed=embed)
 
     @commands.command()
-    async def 온도(self, ctx, *,location):
+    async def 날씨(self, ctx, *,location):
         enc_location = urllib.parse.quote(location + '+날씨')
         TempUrl = 'https://search.naver.com/search.naver?sm=tab_hty.top&where=nexearch&query=' + enc_location
         req = Request(TempUrl)
         page = urlopen(req)
         html = page.read()
         soup=bs4.BeautifulSoup(html,'html5lib')
-        embed = discord.Embed(title=location + " 온도는 " + soup.find('span', class_='todaytemp').text + "도예요!",
-                              description=soup.find('p', class_='cast_txt').text + '!',
+        embed = discord.Embed(title=soup.find('div', class_='temperature_text').text,
+                              description="어제보다 " + soup.find('span', class_='temperature up').text + '!\n'
+                              + soup.find('span', class_='weather before_slash').text,
                               color=0x7AA600)
         embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
         await ctx.send(embed=embed)
