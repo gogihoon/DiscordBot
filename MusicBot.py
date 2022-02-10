@@ -18,6 +18,10 @@ neis = neispy.Client('***REMOVED***')#네이스 api 키
 scinfo = neis.schoolInfo(SCHUL_NM=name)
 AE = scinfo[0].ATPT_OFCDC_SC_CODE  # 교육청코드
 SE = scinfo[0].SD_SCHUL_CODE  # 학교코드
+reqVersion=requests.get("https://ddragon.leagueoflegends.com/api/versions.json")
+loadJson=reqVersion.json()
+lolVersion=loadJson[0]
+
 
 try:
     scmeal = neis.mealServiceDietInfo(AE, SE)#MLSV_YMD=datetime.today().strftime("%Y%m%d")
@@ -252,7 +256,7 @@ class Command(commands.Cog):
                                       description=f'{name} 님의 전적을\n불러오고 있어요!',
                                       color=0x7AA600)
                 icon=f'{resobj["profileIconId"]}'
-                embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/11.24.1/img/profileicon/"+icon+'.png')
+                embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/"+ lolVersion +"/img/profileicon/"+icon+'.png')
                 await ctx.send(embed=embed)
                 URL = "https://kr.api.riotgames.com/lol/league/v4/entries/by-summoner/"+resobj["id"]
                 res = requests.get(URL, headers={"X-Riot-Token": api_key})
@@ -355,7 +359,7 @@ class Command(commands.Cog):
                 mostInfo=json.loads(res.text)
                 j=0
                 for i in mostInfo:
-                    req = requests.get("http://ddragon.leagueoflegends.com/cdn/11.24.1/data/ko_KR/champion.json")
+                    req = requests.get("http://ddragon.leagueoflegends.com/cdn/"+ lolVersion +"/data/ko_KR/champion.json")
                     loadJson = req.json()
                     data = loadJson['data']
                     d = {v['key']: h for h, v in data.items()}
@@ -366,7 +370,7 @@ class Command(commands.Cog):
                     embed = discord.Embed(title=f'모스트{j+1}은(는) {mostName}에요!',
                                           description=f'{mostLevel}레벨\n{mostPoints} 포인트',
                                           color=0x7AA600)
-                    embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/11.24.1/img/champion/"+img)
+                    embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/"+ lolVersion +"/img/champion/"+img)
                     await ctx.send(embed=embed)
                     j += 1
                     if j >= 3:
