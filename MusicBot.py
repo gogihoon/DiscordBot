@@ -2,7 +2,7 @@
 import asyncio
 import discord
 import youtube_dl
-import neispy
+from neispy import Neispy
 import json
 import requests
 from urllib.request import urlopen, Request
@@ -14,7 +14,7 @@ from discord.ext import commands
 
 name="울산애니원고등학교"#급식 학교 이름
 api_key = "***REMOVED***"#라이엇 api 키
-neis = neispy.Client('***REMOVED***')#네이스 api 키
+neis = Neispy.sync('***REMOVED***')#네이스 api 키
 scinfo = neis.schoolInfo(SCHUL_NM=name)
 AE = scinfo[0].ATPT_OFCDC_SC_CODE  # 교육청코드
 SE = scinfo[0].SD_SCHUL_CODE  # 학교코드
