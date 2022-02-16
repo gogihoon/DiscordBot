@@ -208,14 +208,17 @@ class Command(commands.Cog):
     @commands.command()
     async def 날씨(self, ctx, *,location):
         enc_location = urllib.parse.quote(location + '+날씨')
-        TempUrl = 'https://search.naver.com/search.naver?sm=tab_hty.top&where=nexearch&query=' + enc_location
+        TempUrl = 'https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=1&ie=utf8&query=' + enc_location
         req = Request(TempUrl)
         page = urlopen(req)
         html = page.read()
         soup=bs4.BeautifulSoup(html,'html5lib')
-        embed = discord.Embed(title=soup.find('div', class_='temperature_text').text,
-                              description="어제보다 " + soup.find('span', class_='temperature up').text + '!\n'
-                              + soup.find('span', class_='weather before_slash').text,
+        tempInfo = soup.find('p', class_='summary').text.split()
+        embed = discord.Embed(title=soup.find('div', class_='temperature_text').text ,
+                              description = tempInfo[0]+tempInfo[1]+tempInfo[2]+'!\n'+f'날씨는 "{tempInfo[3]}"!\n'
+                              + f'비올 확률은 ' + soup.find_all('dd', class_='desc')[0].text + '!\n'
+                              + f'습도는  ' + soup.find_all('dd', class_='desc')[1].text + '!\n'
+                              + f'풍속은 ' + soup.find_all('dd', class_='desc')[2].text + '!\n' ,
                               color=0x7AA600)
         embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
         await ctx.send(embed=embed)
@@ -402,7 +405,7 @@ async def on_ready():
     print('------')
     await bot.change_presence(status=discord.Status.online,
                               activity=discord.Game('!도움말'))
-
+'''
 @bot.event
 async def on_command_error(ctx, error):
     embed=discord.Embed(description=f'명령어가 없거나 걍 오류에요!\n'
@@ -411,6 +414,6 @@ async def on_command_error(ctx, error):
     embed.set_author(name="Error!!")
     embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
     await ctx.send(embed=embed)
-
+'''
 bot.add_cog(Command(bot))
 bot.run('***REMOVED***')
