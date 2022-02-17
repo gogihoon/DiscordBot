@@ -1,6 +1,6 @@
  #-*- coding:utf-8 -*-
 import asyncio
-import discord
+import nextcord
 import youtube_dl
 from neispy import Neispy
 import json
@@ -9,7 +9,8 @@ from urllib.request import urlopen, Request
 import urllib
 import bs4
 import re
-from discord.ext import commands
+import logging
+from nextcord.ext import commands
 
 
 name="울산애니원고등학교"#급식 학교 이름
@@ -55,7 +56,7 @@ ffmpeg_options = {
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 
-class YTDLSource(discord.PCMVolumeTransformer):
+class YTDLSource(nextcord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
         super().__init__(source, volume)
 
@@ -73,7 +74,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
             data = data['entries'][0]
 
         filename = data['url'] if stream else ytdl.prepare_filename(data)
-        return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
+        return cls(nextcord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
 
 class Command(commands.Cog):
@@ -82,7 +83,7 @@ class Command(commands.Cog):
 
     @commands.command()
     async def 도움말(self, ctx):
-        embed=discord.Embed(title="명령어 앞에는 느낌표!",
+        embed=nextcord.Embed(title="명령어 앞에는 느낌표!",
                             description="들어와\n"
                                         "나가\n"
                                         "노래 [노래제목]\n"
@@ -106,7 +107,7 @@ class Command(commands.Cog):
             if ctx.author.voice:
                 await ctx.author.voice.channel.connect()
             else:
-                embed=discord.Embed(title="당신은 음성 채널에 연결되있지 않아요!",
+                embed=nextcord.Embed(title="당신은 음성 채널에 연결되있지 않아요!",
                                     description="ㅠㅠ",
                                     color=0x7AA600)
                 embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
@@ -118,26 +119,26 @@ class Command(commands.Cog):
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
             ctx.voice_client.play(player, after=lambda e: print(f'에러 : {e}') if e else None)
 
-        await ctx.send(embed=discord.Embed(description=f':play_pause: 지금 플레이 중인 노래 : {player.title}',
+        await ctx.send(embed=nextcord.Embed(description=f':play_pause: 지금 플레이 중인 노래 : {player.title}',
                                            color=0x7AA600))
 
     @commands.command()
     async def 볼륨(self, ctx, volume: int):
         if ctx.voice_client is None:
-            embed=discord.Embed(title="음성 채널에 연결되있지 않아요!",
+            embed=nextcord.Embed(title="음성 채널에 연결되있지 않아요!",
                                 description="ㅠㅠ",
                                 color=0x7AA600)
             embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
             await ctx.send(embed=embed)
         else:   
             ctx.voice_client.source.volume = volume / 100
-            await ctx.send(embed=discord.Embed(description=f"볼륨을 {volume}%로 바꿨어요!",
+            await ctx.send(embed=nextcord.Embed(description=f"볼륨을 {volume}%로 바꿨어요!",
                                                color=0x7AA600))
 
     @commands.command()
     async def 나가(self, ctx):
         if ctx.voice_client is None:
-            embed=discord.Embed(title="음성 채널에 연결되있지 않아요!",
+            embed=nextcord.Embed(title="음성 채널에 연결되있지 않아요!",
                                 description="ㅠㅠ",
                                 color=0x7AA600)
             embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
@@ -148,7 +149,7 @@ class Command(commands.Cog):
     @commands.command()
     async def 멈춰(self, ctx):
         if ctx.voice_client is None:
-            embed=discord.Embed(title="음성 채널에 연결되있지 않아요!",
+            embed=nextcord.Embed(title="음성 채널에 연결되있지 않아요!",
                                 description="ㅠㅠ",
                                 color=0x7AA600)
             embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
@@ -162,7 +163,7 @@ class Command(commands.Cog):
             if ctx.author.voice:
                 await ctx.author.voice.channel.connect()
             else:
-                embed=discord.Embed(title="당신은 음성 채널에 연결되있지 않아요!",
+                embed=nextcord.Embed(title="당신은 음성 채널에 연결되있지 않아요!",
                                     description="ㅠㅠ",
                                     color=0x7AA600)
                 embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
@@ -172,24 +173,24 @@ class Command(commands.Cog):
             
     @commands.command()
     async def 아침(self, ctx):
-        await ctx.send(embed=discord.Embed(description=f"{meal1}",
+        await ctx.send(embed=nextcord.Embed(description=f"{meal1}",
                                            color=0x7AA600))
         
     @commands.command()
     async def 점심(self, ctx):
-        await ctx.send(embed=discord.Embed(description=f"{meal2}",
+        await ctx.send(embed=nextcord.Embed(description=f"{meal2}",
                                            color=0x7AA600))
         
     @commands.command()
     async def 저녘(self, ctx):
-        await ctx.send(embed=discord.Embed(description=f"{meal3}",
+        await ctx.send(embed=nextcord.Embed(description=f"{meal3}",
                                            color=0x7AA600))
 
     @commands.command()
     async def 청소(self, ctx, amount : int):
         if ctx.author.id == 315462084710367233:
             await ctx.channel.purge(limit=amount+1)
-            embed=discord.Embed(title=f'{amount}개의 메세지가 삭제되었어요!',
+            embed=nextcord.Embed(title=f'{amount}개의 메세지가 삭제되었어요!',
                                 description="이 메세지는 3초후 폭파되요!",
                                 color=0x7AA600)
             embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
@@ -200,7 +201,7 @@ class Command(commands.Cog):
             await asyncio.sleep(1)
             await boom.delete()
         else:
-            embed=discord.Embed(description="ㅠㅠ",color=0x7AA600)
+            embed=nextcord.Embed(description="ㅠㅠ",color=0x7AA600)
             embed.set_author(name="당신은 어드민이 아니에요!")
             embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
             await ctx.send(embed=embed)
@@ -214,7 +215,7 @@ class Command(commands.Cog):
         html = page.read()
         soup=bs4.BeautifulSoup(html,'html5lib')
         tempInfo = soup.find('p', class_='summary').text.split()
-        embed = discord.Embed(title=soup.find('div', class_='temperature_text').text ,
+        embed = nextcord.Embed(title=soup.find('div', class_='temperature_text').text ,
                               description = tempInfo[0]+tempInfo[1]+tempInfo[2]+'!\n'+f'날씨는 "{tempInfo[3]}"!\n'
                               + f'비올 확률은 ' + soup.find_all('dd', class_='desc')[0].text + '!\n'
                               + f'습도는  ' + soup.find_all('dd', class_='desc')[1].text + '!\n'
@@ -233,15 +234,15 @@ class Command(commands.Cog):
         soup = bs4.BeautifulSoup(html, 'html5lib')
         if soup.find('span', class_='title') is not None:
             for i in range(0, len(soup.find_all('span', class_='title'))):
-                embed = discord.Embed()
+                embed = nextcord.Embed()
                 price = soup.find_all('div', class_='col search_price_discount_combined responsive_secondrow')[i].text
                 price1 = re.sub('₩', '', price)
                 if len(price1.split()) == 3:
-                    embed = discord.Embed(title = soup.find_all('span', class_='title')[i].text ,
+                    embed = nextcord.Embed(title = soup.find_all('span', class_='title')[i].text ,
                                           description = price1.split()[0] + '세일해서 ' + price1.split()[1] + '->' + price1.split()[2]+' 입니다!',
                                           color=0x7AA600)
                 else:
-                    embed = discord.Embed(title = soup.find_all('span', class_='title')[i].text,
+                    embed = nextcord.Embed(title = soup.find_all('span', class_='title')[i].text,
                                           description = price1.split()[0] + ' 입니다!',
                                           color=0x7AA600)
                 await ctx.send(embed=embed)
@@ -256,7 +257,7 @@ class Command(commands.Cog):
             if res.status_code == 200:
                 #코드가 200일때
                 resobj = json.loads(res.text)
-                embed = discord.Embed(title=f'랭크 전적!',
+                embed = nextcord.Embed(title=f'랭크 전적!',
                                       description=f'{name} 님의 전적을\n불러오고 있어요!',
                                       color=0x7AA600)
                 icon=f'{resobj["profileIconId"]}'
@@ -271,7 +272,7 @@ class Command(commands.Cog):
                         Rank="솔로랭크"
                     else:
                         Rank="자유랭크"
-                    embed = discord.Embed(title=Rank,
+                    embed = nextcord.Embed(title=Rank,
                                           description=f'티어: {i["tier"]} {i["rank"]}\n'
                                                       f'승: {i["wins"]}판, 패: {i["losses"]}판\n'
                                                       f'승률: {i["wins"] / (i["wins"] + i["losses"]) * 100:.2f}%',
@@ -339,13 +340,13 @@ class Command(commands.Cog):
                         if i["tier"] == "CHALLENGER":
                             await ctx.send(embed=prntTier(9, False))
             else:
-                embed=discord.Embed(title="소환사가 존재하지 않아요!",
+                embed=nextcord.Embed(title="소환사가 존재하지 않아요!",
                                     description="ㅠㅠ",
                                     color=0x7AA600)
                 embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
                 await ctx.send(embed=embed)
         else:
-            embed=discord.Embed(title="소환사 닉네임을 입력해주세요!",
+            embed=nextcord.Embed(title="소환사 닉네임을 입력해주세요!",
                                 description="ex) !롤전적 고기냠냠먹음",
                                 color=0x7AA600)
             embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
@@ -371,7 +372,7 @@ class Command(commands.Cog):
                     mostLevel = i["championLevel"]
                     mostPoints = i["championPoints"]
                     img = data[d[f'{i["championId"]}']]['image']['full']
-                    embed = discord.Embed(title=f'모스트{j+1}은(는) {mostName}에요!',
+                    embed = nextcord.Embed(title=f'모스트{j+1}은(는) {mostName}에요!',
                                           description=f'{mostLevel}레벨\n{mostPoints} 포인트',
                                           color=0x7AA600)
                     embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/"+ lolVersion +"/img/champion/"+img)
@@ -380,13 +381,13 @@ class Command(commands.Cog):
                     if j >= 3:
                         break
             else:
-                embed = discord.Embed(title="소환사가 존재하지 않아요!",
+                embed = nextcord.Embed(title="소환사가 존재하지 않아요!",
                                       description="ㅠㅠ",
                                       color=0x7AA600)
                 embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
                 await ctx.send(embed=embed)
         else:
-            embed = discord.Embed(title="소환사 닉네임을 입력해주세요!",
+            embed = nextcord.Embed(title="소환사 닉네임을 입력해주세요!",
                                   description="ex) !모스트 고기냠냠먹음",
                                   color=0x7AA600)
             embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
@@ -403,17 +404,18 @@ async def on_ready():
     print(bot.user.name)
     print(bot.user.id)
     print('------')
-    await bot.change_presence(status=discord.Status.online,
-                              activity=discord.Game('!도움말'))
-'''
+    await bot.change_presence(status=nextcord.Status.online,
+                              activity=nextcord.Game('!도움말'))
+
 @bot.event
 async def on_command_error(ctx, error):
-    embed=discord.Embed(description=f'명령어가 없거나 걍 오류에요!\n'
+    embed=nextcord.Embed(description=f'명령어가 없거나 걍 오류에요!\n'
                                     f'"!도움말"로 명령어를 알아보세요!',
                         color=0x7AA600)
     embed.set_author(name="Error!!")
     embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+    logging.error(error)
     await ctx.send(embed=embed)
-'''
+
 bot.add_cog(Command(bot))
 bot.run('***REMOVED***')
