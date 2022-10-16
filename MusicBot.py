@@ -13,9 +13,9 @@ import logging
 from discord.ext import commands
 
 
-name="울산애니원고등학교"#급식 학교 이름
-api_key = "***REMOVED***"#라이엇 api 키
-neis = Neispy.sync('***REMOVED***')#네이스 api 키
+name="울산애니원고등학교" # 급식 학교 이름
+api_key = "***REMOVED***" # 라이엇 api 키
+neis = Neispy.sync('***REMOVED***') # 네이스 api 키
 scinfo = neis.schoolInfo(SCHUL_NM=name)
 AE = scinfo[0].ATPT_OFCDC_SC_CODE  # 교육청코드
 SE = scinfo[0].SD_SCHUL_CODE  # 학교코드
@@ -25,7 +25,7 @@ lolVersion=loadJson[0]
 
 
 try:
-    scmeal = neis.mealServiceDietInfo(AE, SE)#MLSV_YMD=datetime.today().strftime("%Y%m%d")
+    scmeal = neis.mealServiceDietInfo(AE, SE)# MLSV_YMD=datetime.today().strftime("%Y%m%d")
     meal1 = scmeal[0].DDISH_NM.replace("<br/>", "\n")
     meal2 = scmeal[1].DDISH_NM.replace("<br/>", "\n")
     meal3 = scmeal[2].DDISH_NM.replace("<br/>", "\n")
@@ -35,7 +35,7 @@ except Exception as e:
     meal3 = '급식이 없어요!'
 
 
-youtube_dl.utils.bug_report_message=lambda: ''
+youtube_dl.utils.bug_report_message = lambda: ''
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
@@ -190,7 +190,7 @@ class Command(commands.Cog):
     async def 청소(self, ctx, amount : int):
         if ctx.author.id == 315462084710367233:
             await ctx.channel.purge(limit=amount+1)
-            embed=discord.Embed(title=f'{amount}개의 메세지가 삭제되었어요!',
+            embed = discord.Embed(title=f'{amount}개의 메세지가 삭제되었어요!',
                                 description="이 메세지는 3초후 폭파되요!",
                                 color=0x7AA600)
             embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
@@ -255,7 +255,7 @@ class Command(commands.Cog):
             URL = "https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/"+name
             res = requests.get(URL, headers={"X-Riot-Token": api_key})
             if res.status_code == 200:
-                #코드가 200일때
+                # 코드가 200일때
                 resobj = json.loads(res.text)
                 embed = discord.Embed(title=f'랭크 전적!',
                                       description=f'{name} 님의 전적을\n불러오고 있어요!',
@@ -297,14 +297,13 @@ class Command(commands.Cog):
                         embed.set_thumbnail(url="https://i.imgur.com/qk9H0FE.png")
                     return embed
 
-
                 for i in rankinfo:
                     if i["queueType"] == "RANKED_SOLO_5x5":
-                        #솔랭과 자랭중 솔랭
+                        # 솔랭과 자랭중 솔랭
                         if i["tier"] == "IRON":
-                            await ctx.send(embed=prntTier(1,True))
+                            await ctx.send(embed=prntTier(1, True))
                         if i["tier"] == "BRONZE":
-                            await ctx.send(embed=prntTier(2,True))
+                            await ctx.send(embed=prntTier(2, True))
                         if i["tier"] == "SILVER":
                             await ctx.send(embed=prntTier(3, True))
                         if i["tier"] == "GOLD":
@@ -403,6 +402,23 @@ bot = commands.Bot(
     intents=intents,
 )
 
+
+@bot.event
+async def on_message(message):
+    if not message.guild or message.author.id == bot.user.id:
+        return
+
+    if (m := re.match(r"^<a?:[\w]+:([\d]+)>$", message.content)):
+        if message.content.startswith("<a:"):
+           ext = "gif"
+        else:
+           ext = "png"
+        embed = discord.Embed(color=0x7AA600)
+        embed.set_author(name=message.author.display_name, icon_url=message.author.avatar.url)
+        embed.set_image(url=f"https://cdn.discordapp.com/emojis/{m.group(1)}.{ext}")
+        await message.channel.send(embed=embed)
+        await message.delete()
+
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
@@ -410,15 +426,15 @@ async def on_ready():
     await bot.change_presence(status=discord.Status.online,
                               activity=discord.Game('!도움말'))
 
-#@bot.event
-#async def on_command_error(ctx, error):
-#    embed=discord.Embed(description=f'명령어가 없거나 걍 오류에요!\n'
-#                                    f'"!도움말"로 명령어를 알아보세요!',
-#                        color=0x7AA600)
-#    embed.set_author(name="Error!!")
-#    embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
-#    logging.error(error)
-#    await ctx.send(embed=embed)
+@bot.event
+async def on_command_error(ctx, error):
+    embed = discord.Embed(description=f'명령어가 없거나 걍 오류에요!\n'
+                                    f'"!도움말"로 명령어를 알아보세요!',
+                        color=0x7AA600)
+    embed.set_author(name="Error!!")
+    embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+    logging.error(error)
+    await ctx.send(embed=embed)
 
 async def main():
     async with bot:
