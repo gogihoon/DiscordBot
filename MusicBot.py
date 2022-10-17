@@ -217,7 +217,7 @@ class Command(commands.Cog):
         tempInfo = soup.find('p', class_='summary').text.split()
         embed = discord.Embed(title=soup.find('div', class_='temperature_text').text ,
                               description = tempInfo[0]+tempInfo[1]+tempInfo[2]+'!\n'+f'날씨는 "{tempInfo[3]}"!\n'
-                              + f'비올 확률은 ' + soup.find_all('dd', class_='desc')[0].text + '!\n'
+                              + f'체감 온도는 ' + soup.find_all('dd', class_='desc')[0].text + '!\n'
                               + f'습도는  ' + soup.find_all('dd', class_='desc')[1].text + '!\n'
                               + f'풍속은 ' + soup.find_all('dd', class_='desc')[2].text + '!\n' ,
                               color=0x7AA600)
@@ -405,24 +405,21 @@ bot = commands.Bot(
 
 @bot.event
 async def on_message(message):
-    if not message.guild or message.author.id == bot.user.id:
-        return
-
     if (m := re.match(r"^<a?:[\w]+:([\d]+)>$", message.content)):
         if message.content.startswith("<a:"):
-           ext = "gif"
+            ext = "gif"
         else:
-           ext = "png"
+            ext = "png"
         embed = discord.Embed(color=0x7AA600)
         embed.set_author(name=message.author.display_name, icon_url=message.author.avatar.url)
         embed.set_image(url=f"https://cdn.discordapp.com/emojis/{m.group(1)}.{ext}")
         await message.channel.send(embed=embed)
         await message.delete()
+    await bot.process_commands(message)
 
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
-    print('------')
     await bot.change_presence(status=discord.Status.online,
                               activity=discord.Game('!도움말'))
 
