@@ -436,6 +436,6 @@ async def on_command_error(ctx, error):
 async def main():
     async with bot:
         await bot.add_cog(Command(bot))
-        await bot.start('***REMOVED***')
+        await bot.start('***REMOVED******REMOVED***')
 
 asyncio.run(main())
