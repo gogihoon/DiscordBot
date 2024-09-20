@@ -1,41 +1,39 @@
  #-*- coding:utf-8 -*-
-import asyncio
-import discord
-import youtube_dl
-from neispy import Neispy
-import json
-import requests
-from urllib.request import urlopen, Request
-import urllib
-import bs4
-import re
-import logging
-from discord.ext import commands
 
-
-name="울산애니원고등학교" # 급식 학교 이름
-api_key = "***REMOVED***" # 라이엇 api 키
-neis = Neispy.sync('***REMOVED***') # 네이스 api 키
-scinfo = neis.schoolInfo(SCHUL_NM=name)
-AE = scinfo[0].ATPT_OFCDC_SC_CODE  # 교육청코드
-SE = scinfo[0].SD_SCHUL_CODE  # 학교코드
-reqVersion=requests.get("https://ddragon.leagueoflegends.com/api/versions.json")
-loadJson=reqVersion.json()
-lolVersion=loadJson[0]
-
+package_list = ['beautifulsoup4','discord.py','discord.py[voice]','ffmpeg',
+                'PyNaCl','requests','yt_dlp','html5lib']
+try:
+    import asyncio
+    import discord
+    import yt_dlp   
+    import json
+    import requests
+    from urllib.request import urlopen, Request
+    import urllib
+    import bs4
+    import re
+    import logging
+    from discord.ext import commands
+except:
+    import sys
+    import subprocess
+    for package in package_list:
+        subprocess.check_call([sys.executable,'-m','pip','install','-U',package])
+        print(package+' 완료')
 
 try:
-    scmeal = neis.mealServiceDietInfo(AE, SE)# MLSV_YMD=datetime.today().strftime("%Y%m%d")
-    meal1 = scmeal[0].DDISH_NM.replace("<br/>", "\n")
-    meal2 = scmeal[1].DDISH_NM.replace("<br/>", "\n")
-    meal3 = scmeal[2].DDISH_NM.replace("<br/>", "\n")
-except Exception as e:
-    meal1 = '급식이 없어요!'
-    meal2 = '급식이 없어요!'
-    meal3 = '급식이 없어요!'
+    with open('api_keys.json','r') as f:
+                key = json.load(f)
+except:
+    with open('D:\discordBot\DiscordBot\\'+'api_keys.json','r') as f:
+                key = json.load(f)
+riotKey = key['riot_key']
+discordKey = key['discord_key']
 
+verRes = requests.get('https://ddragon.leagueoflegends.com/api/versions.json')
+lolVersion = verRes.json()
 
-youtube_dl.utils.bug_report_message = lambda: ''
+yt_dlp.utils.bug_report_message = lambda: ''
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
@@ -48,13 +46,14 @@ ytdl_format_options = {
     'quiet': True,
     'no_warnings': True,
     'default_search': 'auto',
-    'source_address': '0.0.0.0'
+    'source_address': '0.0.0.0',
 }
+
 ffmpeg_options = {
     'options': '-vn'
 }
 
-ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
@@ -81,28 +80,26 @@ class Command(commands.Cog):
     def __init__(self,bot):
         self.bot=bot
 
-    @commands.command()
-    async def 도움말(self, ctx):
+    @commands.command(name='comhelp',aliases=['도움말'],description='명령어를 보여줍니다')
+    async def comhelp(self, ctx):
         embed=discord.Embed(title="명령어 앞에는 느낌표!",
-                            description="들어와\n"
-                                        "나가\n"
-                                        "노래 [노래제목]\n"
-                                        "볼륨 [0~100]\n"
-                                        "멈춰\n"
-                                        "아침\n"
-                                        "점심\n"
-                                        "저녘\n"
-                                        "롤전적 [닉넴]\n"
-                                        "모스트 [닉넴]\n"
+                            description="들어와 / 들어가기 / 참여\n"
+                                        "나가 / 나가 / 퇴장\n"
+                                        "노래 / 유튜브 / 음악 [노래제목]\n"
+                                        "볼륨 / 소리 [0~100]\n"
+                                        "멈춰 / 중지 / 끄기\n"
+                                        "등록 [등록할 이름] [닉넴] [태그]\n"
+                                        "랭크 / 티어 [등록된 이름]\n"
+                                        "모스트 [등록된 이름]\n"
                                         "날씨 [지역]\n"
-                                        "스팀 [게임이름]",
+                                        "스팀 / 게임 [게임이름]",
                             color=0x7AA600)
         embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
         await ctx.send(embed=embed)
 
     
-    @commands.command()
-    async def 들어와(self, ctx):
+    @commands.command(name='join',aliases=['들어와','들어가기','참여'],description='당신의 음성 채널에 연결합니다')
+    async def join(self, ctx):
         if ctx.voice_client is None:
             if ctx.author.voice:
                 await ctx.author.voice.channel.connect()
@@ -113,8 +110,8 @@ class Command(commands.Cog):
                 embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
                 await ctx.send(embed=embed)
 
-    @commands.command()
-    async def 노래(self, ctx, *, url):
+    @commands.command(name='song',aliases=['노래','유튜브','음악'],description='노래를 틉니다')
+    async def song(self, ctx, *, url):
         async with ctx.typing():
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
             ctx.voice_client.play(player, after=lambda e: print(f'에러 : {e}') if e else None)
@@ -122,8 +119,8 @@ class Command(commands.Cog):
         await ctx.send(embed=discord.Embed(description=f':play_pause: 지금 플레이 중인 노래 : {player.title}',
                                            color=0x7AA600))
 
-    @commands.command()
-    async def 볼륨(self, ctx, volume: int):
+    @commands.command(name='volume',aliases=['볼륨','소리'],description='볼륨을 변경합니다')
+    async def volume(self, ctx, volume: int):
         if ctx.voice_client is None:
             embed=discord.Embed(title="음성 채널에 연결되있지 않아요!",
                                 description="ㅠㅠ",
@@ -135,8 +132,8 @@ class Command(commands.Cog):
             await ctx.send(embed=discord.Embed(description=f"볼륨을 {volume}%로 바꿨어요!",
                                                color=0x7AA600))
 
-    @commands.command()
-    async def 나가(self, ctx):
+    @commands.command(name='quit',aliases=['나가','퇴장'],description='당신의 음성 채널에서 나갑니다')
+    async def quit(self, ctx):
         if ctx.voice_client is None:
             embed=discord.Embed(title="음성 채널에 연결되있지 않아요!",
                                 description="ㅠㅠ",
@@ -146,8 +143,8 @@ class Command(commands.Cog):
         else:
             await ctx.voice_client.disconnect()
 
-    @commands.command()
-    async def 멈춰(self, ctx):
+    @commands.command(name='stop',aliases=['멈춰','중지','끄기'],description='노래를 정지합니다')
+    async def stop(self, ctx):
         if ctx.voice_client is None:
             embed=discord.Embed(title="음성 채널에 연결되있지 않아요!",
                                 description="ㅠㅠ",
@@ -157,7 +154,7 @@ class Command(commands.Cog):
         else:
             ctx.voice_client.stop()
 
-    @노래.before_invoke
+    @song.before_invoke
     async def ensure_voice(self, ctx):#노래 자동으로 와서 틀기
         if ctx.voice_client is None:
             if ctx.author.voice:
@@ -170,24 +167,9 @@ class Command(commands.Cog):
                 await ctx.send(embed=embed)
         elif ctx.voice_client.is_playing():
             ctx.voice_client.stop()
-            
-    @commands.command()
-    async def 아침(self, ctx):
-        await ctx.send(embed=discord.Embed(description=f"{meal1}",
-                                           color=0x7AA600))
-        
-    @commands.command()
-    async def 점심(self, ctx):
-        await ctx.send(embed=discord.Embed(description=f"{meal2}",
-                                           color=0x7AA600))
-        
-    @commands.command()
-    async def 저녘(self, ctx):
-        await ctx.send(embed=discord.Embed(description=f"{meal3}",
-                                           color=0x7AA600))
 
-    @commands.command()
-    async def 청소(self, ctx, amount : int):
+    @commands.command(name='clean',aliases=['청소','지우기'],description='메세지를 삭제합니다',hidden=True)
+    async def clean(self, ctx, amount : int):
         if ctx.author.id == 315462084710367233:
             await ctx.channel.purge(limit=amount+1)
             embed = discord.Embed(title=f'{amount}개의 메세지가 삭제되었어요!',
@@ -206,8 +188,8 @@ class Command(commands.Cog):
             embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
             await ctx.send(embed=embed)
 
-    @commands.command()
-    async def 날씨(self, ctx, *,location):
+    @commands.command(name='weather',aliases=['날씨'],description='날씨를 확인합니다')
+    async def weather(self, ctx, *,location):
         enc_location = urllib.parse.quote(location + '+날씨')
         TempUrl = 'https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=1&ie=utf8&query=' + enc_location
         req = Request(TempUrl)
@@ -224,8 +206,8 @@ class Command(commands.Cog):
         embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
         await ctx.send(embed=embed)
 
-    @commands.command()
-    async def 스팀(self, ctx, *,game):
+    @commands.command(name='steam',aliases=['스팀','게임'],description='스팀에 있는 게임의 가격을 확인합니다')
+    async def steam(self, ctx, *,game):
         enc_game = urllib.parse.quote(game)
         steamUrl = 'https://store.steampowered.com/search/?l=koreana&term=' + enc_game
         req = Request(steamUrl)
@@ -249,24 +231,40 @@ class Command(commands.Cog):
                 if i >= 2:
                     break
 
-    @commands.command()
-    async def 롤전적(self, ctx, *, name = None):
-        if name is not None:
-            URL = "https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/"+name
-            res = requests.get(URL, headers={"X-Riot-Token": api_key})
-            if res.status_code == 200:
-                # 코드가 200일때
-                resobj = json.loads(res.text)
-                embed = discord.Embed(title=f'랭크 전적!',
-                                      description=f'{name} 님의 전적을\n불러오고 있어요!',
-                                      color=0x7AA600)
-                icon=f'{resobj["profileIconId"]}'
-                embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/"+ lolVersion +"/img/profileicon/"+icon+'.png')
-                await ctx.send(embed=embed)
-                URL = "https://kr.api.riotgames.com/lol/league/v4/entries/by-summoner/"+resobj["id"]
-                res = requests.get(URL, headers={"X-Riot-Token": api_key})
-                rankinfo = json.loads(res.text)
+    @commands.command(name='reagueRegitrion',aliases=['등록'],description='롤 아이디를 데이터베이스에 등록합니다')
+    async def reagueRegistrion(self, ctx, text, name, tag):
+        URL = "https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/"+name+'/'+tag
+        res = requests.get(URL, headers={"X-Riot-Token": riotKey})
+        if res.status_code == 200:
+            data = res.json()
+            obj={
+                ctx.author.id:{
+                    text : data["puuid"]
+                }
+            }
+            with open('reagueData.json','w') as f:
+                json.dump(obj,f,indent=2)
 
+
+    @commands.command(name='reagueTier',aliases=['랭크','티어'],description='랭크 티어를 확인합니다')
+    async def reagueTier(self, ctx, *, name):
+        if name is not None:
+            with open('reagueData.json','r') as f:
+                playerData = json.load(f)
+            puuidtemp = playerData[f'{ctx.author.id}']
+            puuid = puuidtemp[f'{name}']
+            URL = "https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/"+puuid
+            res = requests.get(URL, headers={"X-Riot-Token": riotKey})
+            if res.status_code == 200:
+                data=res.json()
+                embed = discord.Embed(title=f'랭크 전적!',
+                                      description=f'{ctx.author.name} 님의 전적을\n불러오고 있어요!',
+                                      color=0x7AA600)
+                embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/"+ f'{lolVersion[0]}' +"/img/profileicon/"+f'{data["profileIconId"]}'+'.png')
+                await ctx.send(embed=embed)
+                URL = "https://kr.api.riotgames.com/lol/league/v4/entries/by-summoner/" + f'{data["id"]}'
+                rankinfo = requests.get(URL, headers={"X-Riot-Token": riotKey})
+                rankData = rankinfo.json()
                 def prntTier(tier,isSolo):
                     if isSolo == True:
                         Rank="솔로랭크"
@@ -297,7 +295,7 @@ class Command(commands.Cog):
                         embed.set_thumbnail(url="https://i.imgur.com/qk9H0FE.png")
                     return embed
 
-                for i in rankinfo:
+                for i in rankData:
                     if i["queueType"] == "RANKED_SOLO_5x5":
                         # 솔랭과 자랭중 솔랭
                         if i["tier"] == "IRON":
@@ -318,7 +316,7 @@ class Command(commands.Cog):
                             await ctx.send(embed=prntTier(8, True))
                         if i["tier"] == "CHALLENGER":
                             await ctx.send(embed=prntTier(9, True))
-                    else:
+                    elif i["queueType"] == "RANKED_FLEX_SR":
                         # 솔랭과 자랭중 자랭
                         if i["tier"] == "IRON":
                             await ctx.send(embed=prntTier(1, False))
@@ -339,31 +337,35 @@ class Command(commands.Cog):
                         if i["tier"] == "CHALLENGER":
                             await ctx.send(embed=prntTier(9, False))
             else:
-                embed=discord.Embed(title="소환사가 존재하지 않아요!",
-                                    description="ㅠㅠ",
+                embed=discord.Embed(title="등록 하셨나요?",
+                                    description="!등록 [등록될 이름] [롤닉] [태그]로 등록 가능합니다!",
                                     color=0x7AA600)
                 embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
                 await ctx.send(embed=embed)
         else:
-            embed=discord.Embed(title="소환사 닉네임을 입력해주세요!",
-                                description="ex) !롤전적 고기냠냠먹음",
+            embed=discord.Embed(title="등록된 이름을 정확히 입력해주세요!",
+                                description="!등록 [등록될 이름] [롤닉] [태그]로 등록 가능합니다!",
                                 color=0x7AA600)
             embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
             await ctx.send(embed=embed)
 
-    @commands.command()
-    async def 모스트(self, ctx, *, name = None):
+    @commands.command(name='reagueMost',aliases=['모스트'],description='모스트를 확인합니다')
+    async def reagueMost(self, ctx, *, name = None):
         if name is not None:
-            URL = "https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + name
-            res = requests.get(URL, headers={"X-Riot-Token": api_key})
+            with open('reagueData.json','r') as f:
+                playerData = json.load(f)
+            puuidtemp = playerData[f'{ctx.author.id}']
+            puuid = puuidtemp[f'{name}']
+            URL = "https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/"+puuid
+            res = requests.get(URL, headers={"X-Riot-Token": riotKey})
             if res.status_code == 200:
-                resobj = json.loads(res.text)
-                URL = "https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/" + resobj["id"]
-                res = requests.get(URL, headers={"X-Riot-Token": api_key})
-                mostInfo=json.loads(res.text)
+                resobj = res.json()
+                URL = "https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/" + puuid
+                res = requests.get(URL, headers={"X-Riot-Token": riotKey})
+                mostInfo=res.json()
                 j=0
                 for i in mostInfo:
-                    req = requests.get("http://ddragon.leagueoflegends.com/cdn/"+ lolVersion +"/data/ko_KR/champion.json")
+                    req = requests.get("http://ddragon.leagueoflegends.com/cdn/"+ f'{lolVersion[0]}' +"/data/ko_KR/champion.json")
                     loadJson = req.json()
                     data = loadJson['data']
                     d = {v['key']: h for h, v in data.items()}
@@ -374,20 +376,20 @@ class Command(commands.Cog):
                     embed = discord.Embed(title=f'모스트{j+1}은(는) {mostName}에요!',
                                           description=f'{mostLevel}레벨\n{mostPoints} 포인트',
                                           color=0x7AA600)
-                    embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/"+ lolVersion +"/img/champion/"+img)
+                    embed.set_thumbnail(url="http://ddragon.leagueoflegends.com/cdn/"+ f'{lolVersion[0]}' +"/img/champion/"+img)
                     await ctx.send(embed=embed)
                     j += 1
                     if j >= 3:
                         break
             else:
-                embed = discord.Embed(title="소환사가 존재하지 않아요!",
-                                      description="ㅠㅠ",
+                embed = discord.Embed(title="등록을 했나요?",
+                                      description="!등록 [등록될 이름] [롤닉] [태그]로 등록 가능합니다!",
                                       color=0x7AA600)
                 embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
                 await ctx.send(embed=embed)
         else:
-            embed = discord.Embed(title="소환사 닉네임을 입력해주세요!",
-                                  description="ex) !모스트 고기냠냠먹음",
+            embed = discord.Embed(title="등록된 이름을 입력해주세요!",
+                                  description="등록을 안했다면 !등록 [등록될 이름] [롤닉] [태그]로 등록 가능합니다!\nex)!모스트 본계",
                                   color=0x7AA600)
             embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
             await ctx.send(embed=embed)
@@ -436,6 +438,6 @@ async def on_command_error(ctx, error):
 async def main():
     async with bot:
         await bot.add_cog(Command(bot))
-        await bot.start('***REMOVED******REMOVED***')
+        await bot.start(discordKey)
 
 asyncio.run(main())
