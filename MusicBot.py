@@ -25,7 +25,7 @@ try:
     with open('api_keys.json','r') as f:
                 key = json.load(f)
 except:
-    with open('D:\discordBot\DiscordBot\\'+'api_keys.json','r') as f:
+    with open('api_keys.json','r') as f:
                 key = json.load(f)
 riotKey = key['riot_key']
 discordKey = key['discord_key']
