@@ -14,6 +14,7 @@ try:
     import re
     import logging
     from discord.ext import commands
+    from discord import app_commands
 except:
     import sys
     import subprocess
@@ -29,9 +30,12 @@ except:
                 key = json.load(f)
 riotKey = key['riot_key']
 discordKey = key['discord_key']
+betaKey = key['beta_key']
 
 verRes = requests.get('https://ddragon.leagueoflegends.com/api/versions.json')
 lolVersion = verRes.json()
+
+queue = []
 
 yt_dlp.utils.bug_report_message = lambda: ''
 
@@ -55,8 +59,10 @@ ffmpeg_options = {
 
 ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
+
+
 class YTDLSource(discord.PCMVolumeTransformer):
-    def __init__(self, source, *, data, volume=0.5):
+    def __init__(self, source, *, data, volume=0.1):
         super().__init__(source, volume)
 
         self.data = data
@@ -79,24 +85,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
 class Command(commands.Cog):
     def __init__(self,bot):
         self.bot=bot
-
-    @commands.command(name='comhelp',aliases=['도움말'],description='명령어를 보여줍니다')
-    async def comhelp(self, ctx):
-        embed=discord.Embed(title="명령어 앞에는 느낌표!",
-                            description="들어와 / 들어가기 / 참여\n"
-                                        "나가 / 나가 / 퇴장\n"
-                                        "노래 / 유튜브 / 음악 [노래제목]\n"
-                                        "볼륨 / 소리 [0~100]\n"
-                                        "멈춰 / 중지 / 끄기\n"
-                                        "등록 [등록할 이름] [닉넴] [태그]\n"
-                                        "랭크 / 티어 [등록된 이름]\n"
-                                        "모스트 [등록된 이름]\n"
-                                        "날씨 [지역]\n"
-                                        "스팀 / 게임 [게임이름]",
-                            color=0x7AA600)
-        embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
-        await ctx.send(embed=embed)
-
     
     @commands.command(name='join',aliases=['들어와','들어가기','참여'],description='당신의 음성 채널에 연결합니다')
     async def join(self, ctx):
@@ -110,14 +98,91 @@ class Command(commands.Cog):
                 embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
                 await ctx.send(embed=embed)
 
-    @commands.command(name='song',aliases=['노래','유튜브','음악'],description='노래를 틉니다')
-    async def song(self, ctx, *, url):
-        async with ctx.typing():
-            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-            ctx.voice_client.play(player, after=lambda e: print(f'에러 : {e}') if e else None)
+    @commands.command(name='play',aliases=['추가','노래'],description='대기열에 노래를 추가합니다')
+    async def play(self, ctx, *, url):
+        if ctx.voice_client is None:
+            if ctx.author.voice:
+                await ctx.author.voice.channel.connect()
+            else:
+                embed=discord.Embed(title="당신은 음성 채널에 연결되있지 않아요!",
+                                    description="ㅠㅠ",
+                                    color=0x7AA600)
+                embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+                await ctx.send(embed=embed)
+                return
+            
+        queue.append(url)
+        if ctx.voice_client.is_playing() == False:
+            await self.play_music(ctx)
+    
+    async def play_music(self, ctx):
+        if not queue:
+            embed=discord.Embed(title="대기중인 노래들이 없어요!",
+                                    description="!추가 또는 !노래 명령어로 노래를 추가해봐요!",
+                                    color=0x7AA600)
+            embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+            await ctx.send(embed=embed)
+            return
+        else:
+            title = queue.pop(0)
+            player = await YTDLSource.from_url(title, loop=self.bot.loop, stream=True)
+            ctx.voice_client.play(player, after=lambda e: self.bot.loop.create_task(self.play_music(ctx)))
+            embed=discord.Embed(title=":musical_note: 지금 플레이 중인 노래!",
+                                    description=player.title,
+                                    color=0x7AA600)
+            embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
+            await ctx.send(embed=embed)
 
-        await ctx.send(embed=discord.Embed(description=f':play_pause: 지금 플레이 중인 노래 : {player.title}',
-                                           color=0x7AA600))
+    @commands.command(name='queueShow',aliases=['대기열','큐'],description='노래 대기열을 출력합니다')
+    async def queueShow(self, ctx):
+        if queue:
+            queueList = ' :arrow_forward: '.join(queue)
+            embed=discord.Embed(title="대기중인 노래들이에요!",
+                                    description=queueList,
+                                    color=0x7AA600)
+            embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
+            await ctx.send(embed=embed)
+        else:
+            embed=discord.Embed(title="대기중인 노래들이 없어요!",
+                                    description="!추가 또는 !노래 명령어로 노래를 추가해봐요!",
+                                    color=0x7AA600)
+            embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+            await ctx.send(embed=embed)
+
+    @commands.command(name='skip',aliases=['스킵'],description='노래를 스킵합니다')
+    async def skip(self, ctx):
+        if ctx.voice_client is None:
+            embed=discord.Embed(title="음성 채널에 연결되있지 않아요!",
+                                description="ㅠㅠ",
+                                color=0x7AA600)
+            embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+            await ctx.send(embed=embed)
+        else:
+            ctx.voice_client.stop()
+
+    @commands.command(name='pause',aliases=['일시정지','정지'],description='노래를 일시정지합니다')
+    async def pause(self, ctx):
+        if ctx.voice_client is None:
+            embed=discord.Embed(title="음성 채널에 연결되있지 없아요!",
+                                description="ㅠㅠ",
+                                color=0x7AA600)
+            embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+            await ctx.send(embed=embed)
+        else:
+            if ctx.voice_client.is_playing():
+                ctx.voice_client.pause()
+    
+    @commands.command(name='resume',aliases=['재생','재개'],description='노래를 재개합니다.')
+    async def resume(self, ctx):
+        if ctx.voice_client is None:
+            embed=discord.Embed(title="음성 채널에 연결되있지 없아요!",
+                                description="ㅠㅠ",
+                                color=0x7AA600)
+            embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+            await ctx.send(embed=embed)
+        else:
+            if ctx.voice_client.is_paused():
+                ctx.voice_client.resume()
 
     @commands.command(name='volume',aliases=['볼륨','소리'],description='볼륨을 변경합니다')
     async def volume(self, ctx, volume: int):
@@ -142,31 +207,6 @@ class Command(commands.Cog):
             await ctx.send(embed=embed)
         else:
             await ctx.voice_client.disconnect()
-
-    @commands.command(name='stop',aliases=['멈춰','중지','끄기'],description='노래를 정지합니다')
-    async def stop(self, ctx):
-        if ctx.voice_client is None:
-            embed=discord.Embed(title="음성 채널에 연결되있지 않아요!",
-                                description="ㅠㅠ",
-                                color=0x7AA600)
-            embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
-            await ctx.send(embed=embed)
-        else:
-            ctx.voice_client.stop()
-
-    @song.before_invoke
-    async def ensure_voice(self, ctx):#노래 자동으로 와서 틀기
-        if ctx.voice_client is None:
-            if ctx.author.voice:
-                await ctx.author.voice.channel.connect()
-            else:
-                embed=discord.Embed(title="당신은 음성 채널에 연결되있지 않아요!",
-                                    description="ㅠㅠ",
-                                    color=0x7AA600)
-                embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
-                await ctx.send(embed=embed)
-        elif ctx.voice_client.is_playing():
-            ctx.voice_client.stop()
 
     @commands.command(name='clean',aliases=['청소','지우기'],description='메세지를 삭제합니다',hidden=True)
     async def clean(self, ctx, amount : int):
@@ -438,6 +478,6 @@ async def on_command_error(ctx, error):
 async def main():
     async with bot:
         await bot.add_cog(Command(bot))
-        await bot.start(discordKey)
+        await bot.start(betaKey) # 서버 : discordKey / 테스트 : betaKey
 
 asyncio.run(main())
