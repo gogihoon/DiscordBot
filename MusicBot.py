@@ -138,14 +138,14 @@ async def add_music(interaction: discord.Integration, title: str):
     if interaction.guild.voice_client is None:
         if interaction.user.voice:
             await interaction.user.voice.channel.connect()
-            await interaction.response.send_message(embed=discord.Embed(description="연결했어요!", color=0x7AA600), ephemeral=True)
         else:
             embed = discord.Embed(title="채널에 연결되지 않았어요!", description="ㅠㅠ", color=0x7AA600)
             embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
             await interaction.response.send_message(embed=embed)
             return    
     queue.append(title)
-    await interaction.response.send_message(embed=discord.Embed(description="추가완료!", color=0x7AA600), ephemeral=True)
+    
+    await interaction.response.send_message(embed=discord.Embed(description=f"대기열에 추가완료!", color=0x7AA600), ephemeral=True)
     if not interaction.guild.voice_client.is_playing():
         await play_music(interaction)
 
