@@ -20,7 +20,7 @@ except:
     import subprocess
     for package in package_list:
         subprocess.check_call([sys.executable,'-m','pip','install','-U',package])
-        print(package+' 완료')
+        print(package + ' installed')
 
 try:
     with open('api_keys.json','r') as f:
@@ -93,10 +93,9 @@ bot = MyClient(intents=intents)
 @bot.event
 async def on_ready(): # 봇이 시작 될 때
     await bot.tree.sync()
-    print('sync')
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
     await bot.change_presence(status=discord.Status.online,
-                              activity=discord.Game('ㅎㅎ'))
+                              activity=discord.Activity(type=discord.ActivityType.listening, name=('음악')))
 
 @bot.event
 async def on_message(message):# 서버에서 누군가 메세지를 보낼 때
