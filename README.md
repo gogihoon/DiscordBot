@@ -104,33 +104,6 @@ async def steam_price(interaction: discord.Interaction, game: str):
 bot.run(betaKey)
 ```
 
-## 리드미 예시
-
-````markdown
-# Discord 봇 프로젝트
-
-이 프로젝트는 Discord 봇을 만들어 음악을 재생하고, 롤 관련 정보를 제공하는 기능을 포함합니다. 또한, 날씨 및 스팀 게임 가격 조회 기능도 제공합니다.
-
-## 요구 사항
-
-- `beautifulsoup4`
-- `discord.py`
-- `discord.py[voice]`
-- `ffmpeg`
-- `PyNaCl`
-- `requests`
-- `yt_dlp`
-- `html5lib`
-
-## 설정
-
-1. `api_keys.json` 파일에 Riot API 키와 Discord 봇 토큰을 추가합니다.
-2. 필요한 라이브러리를 설치합니다:
-
-```bash
-pip install -U beautifulsoup4 discord.py discord.py[voice] ffmpeg PyNaCl requests yt_dlp html5lib
-````
-
 ## 주요 기능
 
 * `/join`: 음성 채널에 연결
