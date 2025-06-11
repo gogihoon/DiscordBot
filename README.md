@@ -1,127 +1,96 @@
-## 1. 라이브러리 설치
+# DiscordBot
 
-처음에 필요한 라이브러리들을 설치합니다. `beautifulsoup4`, `discord.py`, `yt_dlp` 등은 봇을 실행하는 데 필요한 패키지입니다. 패키지가 없다면 자동으로 설치하도록 되어 있습니다.
+디스코드에서 음악 재생, 롤(LoL) 정보, 날씨, 스팀 게임 가격 등 다양한 기능을 제공하는 봇입니다.
 
-```python
-package_list = ['beautifulsoup4','discord.py','discord.py[voice]','ffmpeg',
-                'PyNaCl','requests','yt_dlp','html5lib']
+---
+
+## 1. 주요 기능
+
+- `/join` : 음성 채널에 연결
+- `/quit` : 음성 채널에서 나가기
+- `/add` : 대기열에 음악 추가
+- `/queue` : 대기열 확인
+- `/skip` : 음악 스킵
+- `/pause` : 음악 일시정지/재개
+- `/volume` : 볼륨 변경
+- `/weather` : 날씨 확인
+- `/steam` : 스팀 게임 가격 확인
+- `/tier` : 롤 소환사 랭크 정보 확인
+- `/most` : 롤 소환사의 모스트 챔피언 확인
+
+---
+
+## 2. 폴더 구조
+
+```
+DiscordBot/
+│
+├── api_keys.json         # API 키 파일 (직접 생성 필요)
+├── config.py             # API 키 및 공통 설정
+├── lol.py                # 롤(LoL) 관련 기능
+├── main.py               # 봇 실행 메인 파일
+├── music.py              # 음악 재생 기능
+├── steam.py              # 스팀 게임 가격 기능
+├── weather.py            # 날씨 기능
+├── README.md             # 이 파일
+└── .gitignore
 ```
 
-## 2. API 키 로드
+---
 
-`api_keys.json` 파일에서 API 키를 읽어들입니다. 이 파일에는 Riot Games API와 Discord API 키가 포함되어야 합니다.
+## 3. 설치 및 준비
 
-```python
-with open('api_keys.json','r') as f:
-    key = json.load(f)
-riotKey = key['riot_key']
-discordKey = key['discord_key']
-betaKey = key['beta_key']
-```
+### 필수 라이브러리 설치
 
-## 3. 유튜브 음악 재생 처리
-
-`yt_dlp`를 사용하여 유튜브에서 음악을 다운로드하고 재생하는 기능을 구현하고 있습니다. 음악이 추가되면 대기열에 추가되고, 음성 채널에 연결하여 음악을 재생합니다.
-
-### 대기열에 노래 추가
-
-`/add` 명령어로 대기열에 노래를 추가하고, 대기열에 노래가 있을 경우 자동으로 플레이를 시작합니다.
-
-```python
-@bot.tree.command(name='add', description='대기열에 노래를 추가해요!')
-async def add_music(interaction: discord.Interaction, title: str):
-    ...
-```
-
-### 음악 재생
-
-대기열에서 노래를 하나씩 빼서 재생합니다. 만약 음성 채널에서 노래가 재생 중이지 않다면, 대기열에서 노래를 하나 꺼내서 재생합니다.
-
-```python
-async def play_music(interaction: discord.Interaction):
-    if not queue:
-        embed = discord.Embed(title="대기중인 노래들이 없어요!", color=0x7AA600)
-        await interaction.channel.send(embed=embed)
-    else:
-        title = queue.pop(0)
-        player = await YTDLSource.from_url(title, loop=bot.loop, stream=True)
-        interaction.guild.voice_client.play(player, after=lambda e: bot.loop.create_task(play_music(interaction)))
-```
-
-## 4. 롤 관련 기능
-
-`/tier`, `/most`, `/register` 등의 명령어로 롤 관련 정보를 제공할 수 있습니다.
-
-### `/tier` 명령어
-
-사용자의 롤 티어 정보를 가져와서 보여줍니다. Riot Games API를 사용하여 소환사의 티어 정보를 확인합니다.
-
-```python
-@bot.tree.command(name='tier', description='랭크 티어를 확인해요!')
-async def reagueTier(interaction: discord.Interaction, nickname: str, tag: str):
-    ...
-```
-
-### `/most` 명령어
-
-사용자가 가장 많이 플레이한 챔피언을 보여줍니다.
-
-```python
-@bot.tree.command(name='most', description='모스트를 확인합니다')
-async def reagueMost(interaction: discord.Interaction, nickname: str, tag: str):
-    ...
-```
-
-## 5. 날씨 및 스팀 게임 가격 조회
-
-`/weather` 명령어로 날씨를 조회하고, `/steam` 명령어로 스팀 게임의 가격을 확인할 수 있습니다.
-
-### `/weather` 명령어
-
-Naver 검색을 통해 입력한 위치의 날씨를 가져와서 보여줍니다.
-
-```python
-@bot.tree.command(name='weather', description='날씨를 확인해요!')
-async def show_weather(interaction: discord.Interaction, location: str):
-    ...
-```
-
-### `/steam` 명령어
-
-스팀에서 게임을 검색하여 해당 게임의 가격을 확인할 수 있습니다.
-
-```python
-@bot.tree.command(name='steam', description='스팀에 있는 게임의 가격을 확인해요!')
-async def steam_price(interaction: discord.Interaction, game: str):
-    ...
-```
-
-## 6. 봇 실행
-
-마지막으로 봇을 실행하는 부분입니다. `bot.run(betaKey)`에서 `betaKey`는 봇의 디스코드 토큰을 의미합니다.
-
-```python
-bot.run(betaKey)
-```
-
-## 주요 기능
-
-* `/join`: 음성 채널에 연결
-* `/quit`: 음성 채널에서 나가기
-* `/add`: 대기열에 음악 추가
-* `/queue`: 대기열 확인
-* `/skip`: 음악 스킵
-* `/pause`: 음악 일시정지/재개
-* `/volume`: 볼륨 변경
-* `/weather`: 날씨 확인
-* `/steam`: 스팀 게임 가격 확인
-* `/tier`: 롤 소환사 랭크 정보 확인
-* `/most`: 롤 소환사의 모스트 챔피언 확인
-
-## 실행
-
-봇을 실행하려면 다음 명령어를 사용합니다:
+아래 명령어로 필요한 패키지를 설치하세요.
 
 ```bash
-python bot.py
+pip install beautifulsoup4 discord.py[voice] ffmpeg PyNaCl requests yt_dlp html5lib
 ```
+
+### API 키 준비
+
+`api_keys.json` 파일을 프로젝트 폴더에 아래와 같이 생성하세요.
+
+```json
+{
+  "riot_key": "여기에_라이엇_API_키",
+  "discord_key": "여기에_디스코드_봇_키",
+  "beta_key": "여기에_베타_봇_키"
+}
+```
+
+---
+
+## 4. 실행 방법
+
+터미널에서 프로젝트 폴더로 이동 후 아래 명령어를 실행하세요.
+
+```bash
+python main.py
+```
+
+---
+
+## 5. 명령어 예시
+
+- `/add [노래제목 또는 유튜브URL]` : 음악 대기열에 추가
+- `/queue` : 현재 대기열 확인
+- `/tier [소환사명] [태그]` : 롤 랭크 티어 확인
+- `/most [소환사명] [태그]` : 롤 모스트 챔피언 확인
+- `/weather [지역명]` : 해당 지역의 날씨 확인
+- `/steam [게임명]` : 스팀 게임 가격 확인
+
+---
+
+## 6. 참고
+
+- 봇을 서버에 초대할 때는 음성/메시지 권한이 필요합니다.
+- 각 기능별 코드는 `music.py`, `lol.py`, `weather.py`, `steam.py`에 분리되어 있습니다.
+- 추가 기능은 각 파일에 함수로 구현 후, `main.py`에서 등록하면 됩니다.
+
+---
+
+## 7. 문의
+
+오류나 문의사항은 이슈로 남겨주세요.
