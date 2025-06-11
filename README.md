@@ -1,17 +1,11 @@
-# 🚀 DiscordBot - All-in-One Discord Entertainment Bot 🎶🎮
+# 🚀 All-in-One Discord Entertainment Bot 🎶🎮
 
 <p align="center">
-  <img src="https://img.shields.io/github/languages/top/gogihoon/DiscordBot?style=flat-square">
-  <img src="https://img.shields.io/github/license/gogihoon/DiscordBot?style=flat-square">
-  <img src="https://img.shields.io/github/stars/gogihoon/DiscordBot?style=flat-square">
-</p>
-
-<p align="center">
-  <img src="https://i.imgur.com/KBfn8V8.png" width="120" alt="DiscordBot Logo"/>
+  <img src="https://imgur.com/jmu6tXm.png" width="120" alt="DiscordBot Logo"/>
 </p>
 
 > **음악 · 게임 · 날씨 · 정보**  
-> 기능이 많아용~
+> 개발중...
 
 ---
 
@@ -50,7 +44,7 @@ DiscordBot/
 
 ---
 
-## ⚡️ 빠른 시작
+## ⚡️ 시작
 
 ### 1. 필수 라이브러리 설치
 
@@ -78,18 +72,8 @@ python main.py
 
 ---
 
-## 👀 스크린샷
-
-<p align="center">
-  <img src="https://i.imgur.com/jmu6tXm.png" width="350" alt="음악봇 스크린샷"/>
-</p>
-
----
-
 ## 💡 참고사항
 
 - **권한**: 봇을 초대할 때 "음성" 및 "메시지" 권한을 꼭 부여하세요.
-- **모듈 구조**: 기능별로 `music.py`, `lol.py`, `weather.py`, `steam.py`에 코드가 분리되어 있습니다.
-- **확장성**: 새로운 기능을 추가하려면 해당 파일에 함수를 만들고, `main.py`에서 등록하면 됩니다.
 
 ---
