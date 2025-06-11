@@ -1,0 +1,529 @@
+# -*- coding:utf-8 -*-
+
+REQUIRED_PACKAGES = [
+    "beautifulsoup4",
+    "discord.py",
+    "discord.py[voice]",
+    "ffmpeg",
+    "PyNaCl",
+    "requests",
+    "yt_dlp",
+    "html5lib",
+]
+
+try:
+    import asyncio
+    import discord
+    import yt_dlp
+    import json
+    import requests
+    from urllib.request import urlopen, Request
+    import urllib.parse
+    import bs4
+    import re
+    from discord.ext import commands
+    from discord import app_commands
+except ImportError as e:
+    import sys
+    import subprocess
+
+    for package in REQUIRED_PACKAGES:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-U", package])
+        print(package + " installed")
+    raise e
+
+# API 키 로드
+try:
+    with open("api_keys.json", "r") as f:
+        key = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError) as e:
+    raise RuntimeError("api_keys.json 파일이 없거나 잘못되었습니다.") from e
+
+RIOT_KEY = key.get("riot_key")
+DISCORD_KEY = key.get("discord_key")
+BETA_KEY = key.get("beta_key")
+
+# 롤 버전 정보
+ver_res = requests.get("https://ddragon.leagueoflegends.com/api/versions.json")
+lol_version = ver_res.json()
+
+# 서버별 노래 큐
+queues = {}
+
+
+def get_queue(guild_id):
+    if guild_id not in queues:
+        queues[guild_id] = []
+    return queues[guild_id]
+
+
+yt_dlp.utils.bug_report_message = lambda: ""
+
+YTDL_FORMAT_OPTIONS = {
+    "format": "bestaudio/best",
+    "outtmpl": "%(extractor)s-%(id)s-%(title)s.%(ext)s",
+    "restrictfilenames": True,
+    "noplaylist": True,
+    "nocheckcertificate": True,
+    "ignoreerrors": False,
+    "logtostderr": False,
+    "quiet": True,
+    "no_warnings": True,
+    "default_search": "auto",
+    "source_address": "0.0.0.0",
+}
+
+FFMPEG_OPTIONS = {"options": "-vn"}
+
+ytdl = yt_dlp.YoutubeDL(YTDL_FORMAT_OPTIONS)
+
+
+class YTDLSource(discord.PCMVolumeTransformer):
+    def __init__(self, source, *, data, volume=0.1):
+        super().__init__(source, volume)
+        self.data = data
+        self.title = data.get("title")
+        self.url = data.get("url")
+
+    @classmethod
+    async def from_url(cls, url, *, loop=None, stream=False):
+        loop = loop or asyncio.get_event_loop()
+        data = await loop.run_in_executor(
+            None, lambda: ytdl.extract_info(url, download=not stream)
+        )
+        if "entries" in data:
+            data = data["entries"][0]
+        filename = data["url"] if stream else ytdl.prepare_filename(data)
+        return cls(discord.FFmpegPCMAudio(filename, **FFMPEG_OPTIONS), data=data)
+
+
+class MyClient(discord.Client):
+    def __init__(self, *, intents: discord.Intents):
+        super().__init__(intents=intents)
+        self.tree = app_commands.CommandTree(self)
+
+
+intents = discord.Intents.default()
+intents.message_content = True
+bot = MyClient(intents=intents)
+
+
+@bot.event
+async def on_ready():
+    await bot.tree.sync()
+    print(f"Logged in as {bot.user} (ID: {bot.user.id})")
+    await bot.change_presence(
+        status=discord.Status.online,
+        activity=discord.Activity(type=discord.ActivityType.listening, name="음악"),
+    )
+
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+    if not message.content.startswith("/"):
+        m = re.match(r"^<a?:[\w]+:([\d]+)>$", message.content)
+        if m:
+            ext = "gif" if message.content.startswith("<a:") else "png"
+            embed = discord.Embed(color=0x7AA600)
+            embed.set_author(
+                name=message.author.display_name, icon_url=message.author.avatar.url
+            )
+            embed.set_image(url=f"https://cdn.discordapp.com/emojis/{m.group(1)}.{ext}")
+            await message.channel.send(embed=embed)
+            await message.delete()
+
+
+# ========== 음악 명령어 ==========
+
+
+@bot.tree.command(name="join", description="음성 채널에 연결해요!")
+async def join_channel(interaction: discord.Interaction):
+    if interaction.guild.voice_client is None:
+        if interaction.user.voice:
+            await interaction.user.voice.channel.connect()
+            await interaction.response.send_message(
+                embed=discord.Embed(description="연결했어요!", color=0x7AA600),
+                ephemeral=True,
+            )
+        else:
+            embed = discord.Embed(
+                title="채널에 연결되지 않았어요!", description="ㅠㅠ", color=0x7AA600
+            )
+            embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+@bot.tree.command(name="quit", description="음성 채널에서 떠나요!")
+async def quit_channel(interaction: discord.Interaction):
+    if interaction.guild.voice_client is None:
+        embed = discord.Embed(
+            title="채널에 연결되지 않았어요!", description="ㅠㅠ", color=0x7AA600
+        )
+        embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    else:
+        await interaction.guild.voice_client.disconnect()
+        await interaction.response.send_message(
+            embed=discord.Embed(description="나갔어요!", color=0x7AA600), ephemeral=True
+        )
+
+
+@bot.tree.command(name="add", description="대기열에 노래를 추가해요!")
+async def add_music(interaction: discord.Interaction, title: str):
+    queue = get_queue(interaction.guild.id)
+    if interaction.guild.voice_client is None:
+        if interaction.user.voice:
+            await interaction.user.voice.channel.connect()
+        else:
+            embed = discord.Embed(
+                title="채널에 연결되지 않았어요!", description="ㅠㅠ", color=0x7AA600
+            )
+            embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+    queue.append(title)
+    await interaction.response.send_message(
+        embed=discord.Embed(description="대기열에 추가완료!", color=0x7AA600),
+        ephemeral=True,
+    )
+    if not interaction.guild.voice_client.is_playing():
+        await play_music(interaction)
+
+
+async def play_music(interaction: discord.Interaction):
+    queue = get_queue(interaction.guild.id)
+    if not queue:
+        embed = discord.Embed(
+            title="대기중인 노래들이 없어요!",
+            description="/add 명령어로 노래를 추가해봐요!",
+            color=0x7AA600,
+        )
+        embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+        await interaction.channel.send(embed=embed)
+    else:
+        title = queue.pop(0)
+        try:
+            player = await YTDLSource.from_url(title, loop=bot.loop, stream=True)
+        except Exception as e:
+            await interaction.channel.send(
+                embed=discord.Embed(
+                    description=f"노래 재생 중 오류 발생: {str(e)}", color=0xFF0000
+                )
+            )
+            return
+        vc = interaction.guild.voice_client
+        vc.play(player, after=lambda e: bot.loop.create_task(play_music(interaction)))
+        embed = discord.Embed(
+            title=":musical_note: 지금 플레이 중인 노래!",
+            description=player.title,
+            color=0x7AA600,
+        )
+        embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
+        await interaction.channel.send(embed=embed)
+
+
+@bot.tree.command(name="queue", description="노래 대기열을 보여줘요!")
+async def music_queue(interaction: discord.Interaction):
+    queue = get_queue(interaction.guild.id)
+    if queue:
+        queue_list = " :arrow_forward: ".join(queue)
+        embed = discord.Embed(
+            title="대기중인 노래들이에요!", description=queue_list, color=0x7AA600
+        )
+        embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    else:
+        embed = discord.Embed(
+            title="대기중인 노래들이 없어요!",
+            description="/add 명령어로 노래를 추가해봐요!",
+            color=0x7AA600,
+        )
+        embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+@bot.tree.command(name="skip", description="노래를 스킵해요!")
+async def skip_music(interaction: discord.Interaction):
+    if interaction.guild.voice_client is None:
+        embed = discord.Embed(
+            title="채널에 연결되지 않았어요!", description="ㅠㅠ", color=0x7AA600
+        )
+        embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    else:
+        interaction.guild.voice_client.stop()
+        await interaction.response.send_message(
+            embed=discord.Embed(description="스킵완료!", color=0x7AA600), ephemeral=True
+        )
+
+
+@bot.tree.command(name="pause", description="노래를 일시정지/재개해요!")
+async def pause_music(interaction: discord.Interaction):
+    vc = interaction.guild.voice_client
+    if vc is None:
+        embed = discord.Embed(
+            title="채널에 연결되지 않았어요!", description="ㅠㅠ", color=0x7AA600
+        )
+        embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    else:
+        if vc.is_playing():
+            vc.pause()
+            await interaction.response.send_message(
+                embed=discord.Embed(description="일시정지 완료!", color=0x7AA600),
+                ephemeral=True,
+            )
+        else:
+            vc.resume()
+            await interaction.response.send_message(
+                embed=discord.Embed(description="재개 완료!", color=0x7AA600),
+                ephemeral=True,
+            )
+
+
+@bot.tree.command(name="volume", description="볼륨을 변경해요!")
+async def volume_change(interaction: discord.Interaction, volume: int):
+    if not (0 <= volume <= 100):
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                description="볼륨은 0에서 100 사이여야 해요!", color=0x7AA600
+            ),
+            ephemeral=True,
+        )
+        return
+    vc = interaction.guild.voice_client
+    if vc is None or not hasattr(vc, "source"):
+        embed = discord.Embed(
+            title="음성 채널에 연결되지 않았어요!", description="ㅠㅠ", color=0x7AA600
+        )
+        embed.set_thumbnail(url="https://i.imgur.com/KBfn8V8.png")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    else:
+        vc.source.volume = volume / 100
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                description=f"볼륨을 {volume}%로 바꿨어요!", color=0x7AA600
+            ),
+            ephemeral=True,
+        )
+
+
+# ========== 날씨 기능 ==========
+
+
+@bot.tree.command(name="weather", description="날씨를 확인해요!")
+async def show_weather(interaction: discord.Interaction, location: str):
+    try:
+        enc_location = urllib.parse.quote(location + "+날씨")
+        temp_url = f"https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=1&ie=utf8&query={enc_location}"
+        req = Request(temp_url)
+        page = urlopen(req)
+        html = page.read()
+        soup = bs4.BeautifulSoup(html, "html5lib")
+        temp_info = soup.find("p", class_="summary").text.split()
+        embed = discord.Embed(
+            title=soup.find("div", class_="temperature_text").text,
+            description=f'{temp_info[0]}{temp_info[1]}{temp_info[2]}!\n날씨는 "{temp_info[3]}"!\n'
+            f"체감 온도는 {soup.find_all('dd', class_='desc')[0].text}!\n"
+            f"습도는 {soup.find_all('dd', class_='desc')[1].text}!\n"
+            f"풍속은 {soup.find_all('dd', class_='desc')[2].text}!\n",
+            color=0x7AA600,
+        )
+        embed.set_thumbnail(url="https://imgur.com/jmu6tXm.png")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    except Exception as e:
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                description=f"날씨 정보를 가져오는 중 오류: {str(e)}", color=0xFF0000
+            ),
+            ephemeral=True,
+        )
+
+
+# ========== 스팀 게임 가격 기능 ==========
+
+
+@bot.tree.command(name="steam", description="스팀에 있는 게임의 가격을 확인해요!")
+async def steam_price(interaction: discord.Interaction, game: str):
+    try:
+        enc_game = urllib.parse.quote(game)
+        steam_url = f"https://store.steampowered.com/search/?l=koreana&term={enc_game}"
+        req = Request(steam_url)
+        page = urlopen(req)
+        html = page.read()
+        soup = bs4.BeautifulSoup(html, "html5lib")
+        titles = soup.find_all("span", class_="title")
+        prices = soup.find_all(
+            "div", class_="col search_price_discount_combined responsive_secondrow"
+        )
+        if titles:
+            await interaction.response.send_message(
+                embed=discord.Embed(title=f"{game}의 검색결과", color=0x7AA600),
+                ephemeral=True,
+            )
+            for i, (title, price_div) in enumerate(zip(titles, prices)):
+                price = price_div.text
+                price1 = re.sub("₩", "", price)
+                if len(price1.split()) == 3:
+                    desc = f"{price1.split()[0]} 세일해서 {price1.split()[1]} -> {price1.split()[2]} 입니다!"
+                else:
+                    desc = f"{price1.split()[0]} 입니다!"
+                embed = discord.Embed(
+                    title=title.text, description=desc, color=0x7AA600
+                )
+                await interaction.followup.send(embed=embed)
+                if i >= 2:
+                    break
+        else:
+            await interaction.response.send_message(
+                embed=discord.Embed(
+                    description="검색 결과가 없습니다.", color=0xFF0000
+                ),
+                ephemeral=True,
+            )
+    except Exception as e:
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                description=f"스팀 정보를 가져오는 중 오류: {str(e)}", color=0xFF0000
+            ),
+            ephemeral=True,
+        )
+
+
+# ========== 롤 티어, 모스트 기능 ==========
+
+
+async def riot_get_puuid(nickname: str, tag: str):
+    URL = f"https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{nickname}/{tag}"
+    try:
+        res = requests.get(URL, headers={"X-Riot-Token": RIOT_KEY})
+        if res.status_code == 200:
+            data = res.json()
+            return data["puuid"]
+    except Exception:
+        return None
+
+
+@bot.tree.command(name="tier", description="롤 랭크 티어를 확인해요!")
+async def league_tier(interaction: discord.Interaction, nickname: str, tag: str):
+    try:
+        puuid = await riot_get_puuid(nickname, tag)
+        if not puuid:
+            await interaction.response.send_message(
+                embed=discord.Embed(
+                    title="닉네임과 태그를 정확히 입력해주세요!", color=0x7AA600
+                ).set_thumbnail(url="https://i.imgur.com/KBfn8V8.png"),
+                ephemeral=True,
+            )
+            return
+        URL = f"https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}"
+        res = requests.get(URL, headers={"X-Riot-Token": RIOT_KEY})
+        if res.status_code != 200:
+            await interaction.response.send_message(
+                embed=discord.Embed(
+                    title="입력하신 닉네임과 태그를 다시 확인해 주세요.", color=0x7AA600
+                ).set_thumbnail(url="https://i.imgur.com/KBfn8V8.png"),
+                ephemeral=True,
+            )
+            return
+        data = res.json()
+        embed = discord.Embed(
+            title="랭크 전적!",
+            description=f"{nickname} 의 전적을\n불러오고 있어요!",
+            color=0x7AA600,
+        )
+        embed.set_thumbnail(
+            url=f"http://ddragon.leagueoflegends.com/cdn/{lol_version[0]}/img/profileicon/{data['profileIconId']}.png"
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        URL = f"https://kr.api.riotgames.com/lol/league/v4/entries/by-summoner/{data['id']}"
+        rankinfo = requests.get(URL, headers={"X-Riot-Token": RIOT_KEY})
+        rankData = rankinfo.json()
+
+        tier_img = {
+            "IRON": "https://i.imgur.com/jMCF0jp.png",
+            "BRONZE": "https://i.imgur.com/Yr5zIKg.png",
+            "SILVER": "https://i.imgur.com/ydwcOgT.png",
+            "GOLD": "https://i.imgur.com/Qpmwjxg.png",
+            "EMERALD": "https://i.imgur.com/JIkmK7x.png",
+            "PLATINUM": "https://i.imgur.com/IhnXzoB.png",
+            "DIAMOND": "https://i.imgur.com/1uYnavY.png",
+            "MASTER": "https://i.imgur.com/ScVNf2g.png",
+            "GRANDMASTER": "https://i.imgur.com/TyASwqZ.png",
+            "CHALLENGER": "https://i.imgur.com/Zfvk2BJ.png",
+        }
+
+        for i in rankData:
+            if i["queueType"] in ["RANKED_SOLO_5x5", "RANKED_FLEX_SR"]:
+                qtype = (
+                    "솔로랭크" if i["queueType"] == "RANKED_SOLO_5x5" else "자유랭크"
+                )
+                embed = discord.Embed(
+                    title=qtype,
+                    description=f' :trophy:  : {i["tier"]} {i["rank"]}\n'
+                    f' :v:  : {i["wins"]} :poop:  : {i["losses"]}\n'
+                    f' :dart:  : {i["wins"] / (i["wins"] + i["losses"]) * 100:.2f}%',
+                    color=0x7AA600,
+                )
+                embed.set_thumbnail(url=tier_img.get(i["tier"], ""))
+                await interaction.followup.send(embed=embed)
+    except Exception as e:
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                description=f"티어 정보를 불러오는 중 오류: {str(e)}", color=0xFF0000
+            ),
+            ephemeral=True,
+        )
+
+
+@bot.tree.command(name="most", description="롤 모스트 챔피언을 확인해요!")
+async def league_most(interaction: discord.Interaction, nickname: str, tag: str):
+    try:
+        puuid = await riot_get_puuid(nickname, tag)
+        if not puuid:
+            await interaction.response.send_message(
+                embed=discord.Embed(
+                    title="닉네임과 태그를 정확히 입력해주세요!", color=0x7AA600
+                ).set_thumbnail(url="https://i.imgur.com/KBfn8V8.png"),
+                ephemeral=True,
+            )
+            return
+        URL = f"https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}"
+        res = requests.get(URL, headers={"X-Riot-Token": RIOT_KEY})
+        mostInfo = res.json()
+        await interaction.response.send_message(
+            embed=discord.Embed(title=f"{nickname}의 모스트", color=0x7AA600),
+            ephemeral=True,
+        )
+        req = requests.get(
+            f"http://ddragon.leagueoflegends.com/cdn/{lol_version[0]}/data/ko_KR/champion.json"
+        )
+        champ_data = req.json()["data"]
+        key_to_name = {v["key"]: k for k, v in champ_data.items()}
+        for j, i in enumerate(mostInfo[:3]):
+            champ_name = champ_data[key_to_name[str(i["championId"])]]["name"]
+            champ_level = i["championLevel"]
+            champ_points = i["championPoints"]
+            img = champ_data[key_to_name[str(i["championId"])]]["image"]["full"]
+            embed = discord.Embed(
+                title=f"모스트{j + 1}은(는) {champ_name}에요!",
+                description=f"{champ_level}레벨\n{champ_points} 포인트",
+                color=0x7AA600,
+            )
+            embed.set_thumbnail(
+                url=f"http://ddragon.leagueoflegends.com/cdn/{lol_version[0]}/img/champion/{img}"
+            )
+            await interaction.followup.send(embed=embed)
+    except Exception as e:
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                description=f"모스트 정보를 불러오는 중 오류: {str(e)}", color=0xFF0000
+            ),
+            ephemeral=True,
+        )
+
+
+bot.run(BETA_KEY)
