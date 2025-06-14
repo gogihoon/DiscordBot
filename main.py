@@ -1,5 +1,6 @@
 import re
 import discord
+import re
 from discord import app_commands
 from config import *
 from music import setup_music_commands
@@ -27,6 +28,22 @@ async def on_ready():
         status=discord.Status.online,
         activity=discord.Activity(type=discord.ActivityType.listening, name="음악"),
     )
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+    if not message.content.startswith("/"):
+        m = re.match(r"^<a?:[\w]+:([\d]+)>$", message.content)
+        if m:
+            ext = "gif" if message.content.startswith("<a:") else "png"
+            embed = discord.Embed(color=0x7AA600)
+            embed.set_author(
+                name=message.author.display_name, icon_url=message.author.avatar.url
+            )
+            embed.set_image(url=f"https://cdn.discordapp.com/emojis/{m.group(1)}.{ext}")
+            await message.channel.send(embed=embed)
+            await message.delete()
 
 
 @bot.event
