@@ -1,4 +1,5 @@
 import discord
+import re
 from discord import app_commands
 from config import *
 from music import setup_music_commands
