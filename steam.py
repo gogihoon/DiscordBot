@@ -13,7 +13,10 @@ def setup_steam_commands(bot):
             steam_url = (
                 f"https://store.steampowered.com/search/?l=koreana&term={enc_game}"
             )
-            req = Request(steam_url)
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+            }
+            req = Request(steam_url, headers=headers)
             page = urlopen(req)
             html = page.read()
             soup = bs4.BeautifulSoup(html, "html5lib")

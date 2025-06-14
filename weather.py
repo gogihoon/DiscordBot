@@ -10,7 +10,10 @@ def setup_weather_commands(bot):
         try:
             enc_location = urllib.parse.quote(location + "+날씨")
             temp_url = f"https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=1&ie=utf8&query={enc_location}"
-            req = Request(temp_url)
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+            }
+            req = Request(temp_url, headers=headers)
             page = urlopen(req)
             html = page.read()
             soup = bs4.BeautifulSoup(html, "html5lib")

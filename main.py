@@ -1,6 +1,7 @@
+import re
 import discord
 from discord import app_commands
-from config import BETA_KEY
+from config import *
 from music import setup_music_commands
 from weather import setup_weather_commands
 from steam import setup_steam_commands
@@ -28,10 +29,27 @@ async def on_ready():
     )
 
 
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+    if not message.content.startswith("/"):
+        m = re.match(r"^<a?:[\w]+:([\d]+)>$", message.content)
+        if m:
+            ext = "gif" if message.content.startswith("<a:") else "png"
+            embed = discord.Embed(color=0x7AA600)
+            embed.set_author(
+                name=message.author.display_name, icon_url=message.author.avatar.url
+            )
+            embed.set_image(url=f"https://cdn.discordapp.com/emojis/{m.group(1)}.{ext}")
+            await message.channel.send(embed=embed)
+            await message.delete()
+
+
 # 기능별 명령어 등록
 setup_music_commands(bot)
 setup_weather_commands(bot)
 setup_steam_commands(bot)
 setup_lol_commands(bot)
 
-bot.run(BETA_KEY)
+bot.run(DISCORD_KEY)
