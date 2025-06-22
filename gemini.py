@@ -24,7 +24,12 @@ def setup_gemini_commands(bot):
                 "Content-Type": "application/json",
             }
             params = {"key": GEMINI_KEY}
-            data = {"contents": [{"parts": [{"text": question}]}]}
+            data = {
+                "contents": [
+                    {"parts": [{"text": "짧게 대답해줘. 질문 : " + question}]}
+                ],
+                "tools": [{"goggle_search": {}}],
+            }
             response = requests.post(
                 GEMINI_API_URL,
                 params=params,
