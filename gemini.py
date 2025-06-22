@@ -28,7 +28,7 @@ def setup_gemini_commands(bot):
                 "contents": [
                     {"parts": [{"text": "짧게 대답해줘. 질문 : " + question}]}
                 ],
-                "tools": [{"goggle_search": {}}],
+                "tools": [{"google_search": {}}],
             }
             response = requests.post(
                 GEMINI_API_URL,
