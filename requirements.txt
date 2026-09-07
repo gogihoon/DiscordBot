@@ -1,0 +1,20 @@
+# pip install -r requirements.txt
+# ffmpeg 실행 파일은 pip으로 설치되지 않습니다. README의 안내를 따라 따로 설치하세요.
+
+# 디스코드 봇 본체. [voice]가 PyNaCl과 davey(음성 E2EE)까지 함께 설치합니다.
+# 2.7.0 미만은 DAVE 프로토콜을 지원하지 않아 음성 연결이 4017로 끊깁니다.
+discord.py[voice]>=2.7.1
+
+# 오디오 스트림 추출. 유튜브가 바뀌면 구버전은 추출이 막히므로 자주 올려주세요.
+#   pip install -U yt-dlp
+yt-dlp>=2026.8.19
+
+# 라이엇/Gemini API 호출
+requests>=2.32.4
+
+# 날씨, 스팀 가격 크롤링
+beautifulsoup4>=4.13.4
+html5lib>=1.1
+
+# .env 파일에서 API 키 읽기
+python-dotenv>=1.2.2
